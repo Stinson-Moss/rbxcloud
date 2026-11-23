@@ -2,17 +2,20 @@
 
 ## Add Dependency
 
-To use `rbxcloud` in a Rust project, simply add `rbxcloud` to the `Cargo.toml` dependency list.
+This fork is not published to crates.io, so add `rbxcloud` as a git dependency in `Cargo.toml`:
 ```toml
 [dependencies]
-rbxcloud = "0.17.0"
+rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.18.0" }
 ```
 
 Alternatively, use `cargo add`.
 ```sh
-$ cargo add rbxcloud
+$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.18.0
 ```
 
 ## Documentation
 
-See the [docs.rs](https://docs.rs/rbxcloud/latest/rbxcloud/) page for documentation.
+Build the API documentation locally from a clone of the repository:
+```sh
+$ mise run docs:rust
+```

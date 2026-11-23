@@ -1,8 +1,12 @@
 use std::{fs, path::Path};
 
-use crate::rbx::{error::Error, util::QueryString};
-use reqwest::{multipart, Response};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use crate::rbx::{
+    error::Error,
+    http::{self, HttpClient},
+    util::QueryString,
+};
+use reqwest::multipart;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -28,6 +32,9 @@ pub enum AssetCreator {
 #[serde(rename_all = "camelCase")]
 pub struct AssetCreationContext {
     pub creator: AssetCreator,
+    /// Expected upload fee in Robux. Omitted from the request when `None`;
+    /// Roblox rejects an explicit `null` (see issue #33).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_price: Option<u64>,
 }
 
@@ -54,37 +61,31 @@ pub struct AssetCreation {
 }
 
 pub struct CreateAssetParams {
-    pub api_key: String,
     pub asset: AssetCreation,
     pub filepath: String,
 }
 
 pub struct CreateAssetParamsWithContents<'a> {
-    pub api_key: String,
     pub asset: AssetCreation,
     pub contents: &'a [u8],
 }
 
 pub struct UpdateAssetParams {
-    pub api_key: String,
     pub asset_id: u64,
     pub asset_type: AssetType,
     pub filepath: String,
 }
 
 pub struct GetAssetOperationParams {
-    pub api_key: String,
     pub operation_id: String,
 }
 
 pub struct GetAssetParams {
-    pub api_key: String,
     pub asset_id: u64,
     pub read_mask: Option<String>,
 }
 
 pub struct ArchiveAssetParams {
-    pub api_key: String,
     pub asset_id: u64,
 }
 
@@ -229,23 +230,6 @@ impl Serialize for AssetType {
     }
 }
 
-async fn handle_res<T: DeserializeOwned>(res: Response) -> Result<T, Error> {
-    let status = res.status();
-    match status.is_success() {
-        true => {
-            let body = res.json::<T>().await?;
-            Ok(body)
-        }
-        false => {
-            let text = res.text().await?;
-            Err(Error::HttpStatusError {
-                code: status.as_u16(),
-                msg: text,
-            })
-        }
-    }
-}
-
 fn build_url(asset_id: Option<u64>) -> String {
     if let Some(asset_id) = asset_id {
         format!("https://apis.roblox.com/assets/v1/assets/{asset_id}")
@@ -254,7 +238,10 @@ fn build_url(asset_id: Option<u64>) -> String {
     }
 }
 
-pub async fn create_asset(params: &CreateAssetParams) -> Result<AssetOperation, Error> {
+pub async fn create_asset(
+    http: &HttpClient,
+    params: &CreateAssetParams,
+) -> Result<AssetOperation, Error> {
     let file_name = Path::new(&params.filepath)
         .file_name()
         .ok_or_else(|| Error::FileLoadError("Failed to parse file name from file path".into()))?
@@ -273,18 +260,13 @@ pub async fn create_asset(params: &CreateAssetParams) -> Result<AssetOperation, 
         .text("request", asset_info)
         .part("fileContent", file);
 
-    let client = reqwest::Client::new();
     let url = build_url(None);
-    let res = client
-        .post(url)
-        .header("x-api-key", &params.api_key)
-        .multipart(form)
-        .send()
-        .await?;
-    handle_res::<AssetOperation>(res).await
+    let res = http.post(url).multipart(form).send().await?;
+    http::json::<AssetOperation>(res).await
 }
 
 pub async fn create_asset_with_contents<'a>(
+    http: &HttpClient,
     params: &CreateAssetParamsWithContents<'a>,
 ) -> Result<AssetOperation, Error> {
     let file = multipart::Part::bytes(params.contents.to_vec())
@@ -296,18 +278,15 @@ pub async fn create_asset_with_contents<'a>(
         .text("request", asset_info)
         .part("fileContent", file);
 
-    let client = reqwest::Client::new();
     let url = build_url(None);
-    let res = client
-        .post(url)
-        .header("x-api-key", &params.api_key)
-        .multipart(form)
-        .send()
-        .await?;
-    handle_res::<AssetOperation>(res).await
+    let res = http.post(url).multipart(form).send().await?;
+    http::json::<AssetOperation>(res).await
 }
 
-pub async fn update_asset(params: &UpdateAssetParams) -> Result<AssetOperation, Error> {
+pub async fn update_asset(
+    http: &HttpClient,
+    params: &UpdateAssetParams,
+) -> Result<AssetOperation, Error> {
     let file_name = Path::new(&params.filepath)
         .file_name()
         .ok_or_else(|| Error::FileLoadError("Failed to parse file name from file path".into()))?
@@ -330,33 +309,24 @@ pub async fn update_asset(params: &UpdateAssetParams) -> Result<AssetOperation, 
         .text("request", request)
         .part("fileContent", file);
 
-    let client = reqwest::Client::new();
     let url = build_url(Some(params.asset_id));
-    let res = client
-        .patch(url)
-        .header("x-api-key", &params.api_key)
-        .multipart(form)
-        .send()
-        .await?;
-    handle_res::<AssetOperation>(res).await
+    let res = http.patch(url).multipart(form).send().await?;
+    http::json::<AssetOperation>(res).await
 }
 
-pub async fn get_operation(params: &GetAssetOperationParams) -> Result<AssetGetOperation, Error> {
-    let client = reqwest::Client::new();
+pub async fn get_operation(
+    http: &HttpClient,
+    params: &GetAssetOperationParams,
+) -> Result<AssetGetOperation, Error> {
     let url = format!(
         "https://apis.roblox.com/assets/v1/operations/{operationId}",
         operationId = params.operation_id
     );
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
-    handle_res::<AssetGetOperation>(res).await
+    let res = http.get(url).send().await?;
+    http::json::<AssetGetOperation>(res).await
 }
 
-pub async fn get_asset(params: &GetAssetParams) -> Result<AssetInfo, Error> {
-    let client = reqwest::Client::new();
+pub async fn get_asset(http: &HttpClient, params: &GetAssetParams) -> Result<AssetInfo, Error> {
     let url = format!(
         "https://apis.roblox.com/assets/v1/assets/{assetId}",
         assetId = params.asset_id
@@ -365,41 +335,38 @@ pub async fn get_asset(params: &GetAssetParams) -> Result<AssetInfo, Error> {
     if let Some(read_mask) = &params.read_mask {
         query.push(("readMask", read_mask.clone()));
     }
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
-    handle_res::<AssetInfo>(res).await
+    let res = http.get(url).query(&query).send().await?;
+    http::json::<AssetInfo>(res).await
 }
 
-pub async fn archive_asset(params: &ArchiveAssetParams) -> Result<AssetInfo, Error> {
-    let client = reqwest::Client::new();
+pub async fn archive_asset(
+    http: &HttpClient,
+    params: &ArchiveAssetParams,
+) -> Result<AssetInfo, Error> {
     let url = format!(
         "https://apis.roblox.com/assets/v1/assets/{assetId}:archive",
         assetId = params.asset_id
     );
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .send()
         .await?;
-    handle_res::<AssetInfo>(res).await
+    http::json::<AssetInfo>(res).await
 }
 
-pub async fn restore_asset(params: &ArchiveAssetParams) -> Result<AssetInfo, Error> {
-    let client = reqwest::Client::new();
+pub async fn restore_asset(
+    http: &HttpClient,
+    params: &ArchiveAssetParams,
+) -> Result<AssetInfo, Error> {
     let url = format!(
         "https://apis.roblox.com/assets/v1/assets/{assetId}:restore",
         assetId = params.asset_id
     );
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .send()
         .await?;
-    handle_res::<AssetInfo>(res).await
+    http::json::<AssetInfo>(res).await
 }

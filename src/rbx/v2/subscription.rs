@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::rbx::{error::Error, types::UniverseId, util::QueryString};
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
 pub enum SubscriptionView {
@@ -14,7 +14,7 @@ impl std::fmt::Display for SubscriptionView {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(
             f,
-            "{:?}",
+            "{}",
             match self {
                 Self::Basic => "BASIC",
                 Self::Full => "FULL",
@@ -24,7 +24,6 @@ impl std::fmt::Display for SubscriptionView {
 }
 
 pub struct GetSubscriptionParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub subscription_product: String,
     pub subscription: String,
@@ -34,25 +33,25 @@ pub struct GetSubscriptionParams {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSubscriptionResponse {
-    path: String,
-    create_time: String,
-    update_time: String,
-    active: bool,
-    will_renew: bool,
-    last_billing_time: String,
-    next_renew_time: String,
-    expire_time: String,
-    state: SubscriptionState,
-    expiration_details: SubscriptionExpirationDetails,
-    purchase_platform: SubscriptionPurchasePlatform,
-    payment_provider: SubscriptionPaymentProvider,
-    user: String,
+    pub path: String,
+    pub create_time: String,
+    pub update_time: String,
+    pub active: bool,
+    pub will_renew: bool,
+    pub last_billing_time: String,
+    pub next_renew_time: String,
+    pub expire_time: String,
+    pub state: SubscriptionState,
+    pub expiration_details: SubscriptionExpirationDetails,
+    pub purchase_platform: SubscriptionPurchasePlatform,
+    pub payment_provider: SubscriptionPaymentProvider,
+    pub user: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SubscriptionExpirationDetails {
-    reason: SubscriptionExpirationReason,
+    pub reason: SubscriptionExpirationReason,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -95,35 +94,22 @@ pub enum SubscriptionPaymentProvider {
 }
 
 pub async fn get_subscription(
+    http: &HttpClient,
     params: &GetSubscriptionParams,
 ) -> Result<GetSubscriptionResponse, Error> {
-    let client = reqwest::Client::new();
-
-    let url = format!(
-        "https://apis.roblox.com/cloud/v2/universes/{universeId}/subscription-products/{subscription}",
-        universeId = &params.universe_id,
-		subscription = &params.subscription_product,
-    );
+    let url = http::url(&format!(
+        "/cloud/v2/universes/{universeId}/subscription-products/{product}/subscriptions/{subscription}",
+        universeId = params.universe_id,
+        product = params.subscription_product,
+        subscription = params.subscription,
+    ));
 
     let mut query: QueryString = vec![];
     if let Some(view) = &params.view {
         query.push(("view", view.to_string()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<GetSubscriptionResponse>().await?;
-    Ok(body)
+    http::json::<GetSubscriptionResponse>(res).await
 }

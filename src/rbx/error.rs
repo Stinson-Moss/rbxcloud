@@ -30,9 +30,22 @@ pub enum Error {
 
     /// Endpoint error.
     EndpointError(String),
+
+    /// A Luau buffer value could not be decoded.
+    BufferDecodeError(String),
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::ReqwestError(e) => Some(e),
+            Self::IOError(e) => Some(e),
+            Self::SerdeJsonError(e) => Some(e),
+            Self::ParseFloatError(e) => Some(e),
+            _ => None,
+        }
+    }
+}
 
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
@@ -64,12 +77,13 @@ impl std::fmt::Display for Error {
             Self::FileLoadError(s) => write!(f, "failed to read file: {s}"),
             Self::InferAssetTypeError(s) => write!(f, "failed to infer asset type: {s}"),
             Self::HttpStatusError { code, msg } => write!(f, "http {code}: {msg}"),
-            Self::ReqwestError(e) => write!(f, "{e:?}"),
-            Self::IOError(e) => write!(f, "{e:?}"),
-            Self::SerdeJsonError(e) => write!(f, "{e:?}"),
-            Self::DataStoreError(e) => write!(f, "{e:?}"),
-            Self::ParseFloatError(e) => write!(f, "{e:?}"),
+            Self::ReqwestError(e) => write!(f, "request failed: {e}"),
+            Self::IOError(e) => write!(f, "io error: {e}"),
+            Self::SerdeJsonError(e) => write!(f, "json error: {e}"),
+            Self::DataStoreError(e) => write!(f, "datastore error: {e}"),
+            Self::ParseFloatError(e) => write!(f, "{e}"),
             Self::EndpointError(s) => write!(f, "endpoint error: {s}"),
+            Self::BufferDecodeError(s) => write!(f, "failed to decode buffer: {s}"),
         }
     }
 }

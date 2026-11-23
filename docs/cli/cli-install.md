@@ -4,10 +4,18 @@
 
 There are a few different ways to install the `rbxcloud` CLI.
 
-### [Aftman](https://github.com/LPGhatguy/aftman) <small>(Preferred)</small>
+### [mise-en-place](https://mise.jdx.dev) <small>(Preferred)</small>
+Run `mise use` within your project directory. This adds `rbxcloud` to the project's `mise.toml` file (creating it if needed) and installs it from the GitHub releases.
+```sh
+$ mise use github:Stinson-Moss/rbxcloud@0.18.0
+```
+
+Omit the version (`github:Stinson-Moss/rbxcloud`) to use the latest release. Anyone else working in the project then only needs to run `mise install`.
+
+### [Aftman](https://github.com/LPGhatguy/aftman)
 Run the `aftman add` command within your project directory. This will add `rbxcloud` to the project's `aftman.toml` file (or create one if it doesn't yet exist).
 ```sh
-$ aftman add Sleitnick/rbxcloud@0.17.0
+$ aftman add Stinson-Moss/rbxcloud@0.18.0
 ```
 
 Next, run `aftman install` to install `rbxcloud`.
@@ -17,19 +25,19 @@ Add `rbxcloud` under the `[tools]` section of your `foreman.toml` file.
 ```toml
 # foreman.toml
 [tools]
-rbxcloud = { github = "Sleitnick/rbxcloud", version = "0.17.0" }
+rbxcloud = { github = "Stinson-Moss/rbxcloud", version = "0.18.0" }
 ```
 
 Next, run `foreman install` to install `rbxcloud`.
 
 ??? info "Legacy"
-	Aftman is preferred over Foreman. For more information, see the [Aftman](https://github.com/LPGhatguy/aftman) GitHub repository.
+	mise is preferred over Aftman and Foreman. For more information, see the [mise-en-place](https://mise.jdx.dev) documentation.
 
-### [Releases](https://github.com/Sleitnick/rbxcloud/releases)
+### [Releases](https://github.com/Stinson-Moss/rbxcloud/releases)
 A few prebuilt binaries are compiled and attached to each release.
 
-1. Go to the [`releases`](https://github.com/Sleitnick/rbxcloud/releases) page
-1. Navigate to the desired version (e.g. the [latest version](https://github.com/Sleitnick/rbxcloud/releases/latest))
+1. Go to the [`releases`](https://github.com/Stinson-Moss/rbxcloud/releases) page
+1. Navigate to the desired version (e.g. the [latest version](https://github.com/Stinson-Moss/rbxcloud/releases/latest))
 1. Download and unzip the desired executable
 1. Relocate the executable to a more permanent place
 1. Change your OS path variable to point to the executable

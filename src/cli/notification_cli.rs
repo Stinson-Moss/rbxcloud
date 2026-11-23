@@ -1,8 +1,5 @@
 use clap::{Args, Subcommand};
-use rbxcloud::rbx::{
-    types::{RobloxUserId, UniverseId},
-    v2::Client,
-};
+use rbxcloud::rbx::types::{RobloxUserId, UniverseId};
 
 #[derive(Debug, Subcommand)]
 pub enum NotificationCommands {
@@ -46,7 +43,7 @@ impl Notification {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let notification_client = client.notification(UniverseId(universe_id));
 
                 let notification = serde_json::from_str::<

@@ -9,6 +9,7 @@ pub mod messaging;
 pub mod ordered_datastore;
 
 use crate::rbx::error;
+use crate::rbx::http::HttpClient;
 use assets::{ArchiveAssetParams, AssetInfo, GetAssetOperationParams, GetAssetParams};
 pub use experience::PublishVersionType;
 use serde::de::DeserializeOwned;
@@ -73,7 +74,7 @@ impl std::convert::From<u64> for PageSize {
 pub struct RbxExperience {
     pub universe_id: UniverseId,
     pub place_id: PlaceId,
-    pub api_key: String,
+    http: HttpClient,
 }
 
 impl RbxExperience {
@@ -85,19 +86,21 @@ impl RbxExperience {
         filename: &str,
         version_type: PublishVersionType,
     ) -> Result<PublishExperienceResponse, Error> {
-        experience::publish_experience(&PublishExperienceParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            place_id: self.place_id,
-            version_type,
-            filename: filename.to_string(),
-        })
+        experience::publish_experience(
+            &self.http,
+            &PublishExperienceParams {
+                universe_id: self.universe_id,
+                place_id: self.place_id,
+                version_type,
+                filename: filename.to_string(),
+            },
+        )
         .await
     }
 }
 
 pub struct RbxMessaging {
-    pub api_key: String,
+    http: HttpClient,
     pub universe_id: UniverseId,
     pub topic: String,
 }
@@ -105,18 +108,20 @@ pub struct RbxMessaging {
 impl RbxMessaging {
     /// Publish a message.
     pub async fn publish(&self, message: &str) -> Result<(), Error> {
-        messaging::publish_message(&PublishMessageParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            topic: self.topic.clone(),
-            message: message.to_string(),
-        })
+        messaging::publish_message(
+            &self.http,
+            &PublishMessageParams {
+                universe_id: self.universe_id,
+                topic: self.topic.clone(),
+                message: message.to_string(),
+            },
+        )
         .await
     }
 }
 
 pub struct RbxDataStore {
-    pub api_key: String,
+    http: HttpClient,
     pub universe_id: UniverseId,
 }
 
@@ -191,13 +196,15 @@ impl RbxDataStore {
         &self,
         params: &DataStoreListStores,
     ) -> Result<ListDataStoresResponse, Error> {
-        datastore::list_datastores(&ListDataStoresParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            prefix: params.prefix.clone(),
-            limit: params.limit,
-            cursor: params.cursor.clone(),
-        })
+        datastore::list_datastores(
+            &self.http,
+            &ListDataStoresParams {
+                universe_id: self.universe_id,
+                prefix: params.prefix.clone(),
+                limit: params.limit,
+                cursor: params.cursor.clone(),
+            },
+        )
         .await
     }
 
@@ -206,28 +213,32 @@ impl RbxDataStore {
         &self,
         params: &DataStoreListEntries,
     ) -> Result<ListEntriesResponse, Error> {
-        datastore::list_entries(&ListEntriesParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            all_scopes: params.all_scopes,
-            prefix: params.prefix.clone(),
-            limit: params.limit,
-            cursor: params.cursor.clone(),
-        })
+        datastore::list_entries(
+            &self.http,
+            &ListEntriesParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                all_scopes: params.all_scopes,
+                prefix: params.prefix.clone(),
+                limit: params.limit,
+                cursor: params.cursor.clone(),
+            },
+        )
         .await
     }
 
     /// Get the entry string representation of a specific key.
     pub async fn get_entry_string(&self, params: &DataStoreGetEntry) -> Result<String, Error> {
-        datastore::get_entry_string(&GetEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-        })
+        datastore::get_entry_string(
+            &self.http,
+            &GetEntryParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+            },
+        )
         .await
     }
 
@@ -236,30 +247,34 @@ impl RbxDataStore {
         &self,
         params: &DataStoreGetEntry,
     ) -> Result<T, Error> {
-        datastore::get_entry::<T>(&GetEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-        })
+        datastore::get_entry::<T>(
+            &self.http,
+            &GetEntryParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+            },
+        )
         .await
     }
 
     /// Set (or create) the entry value of a specific key.
     pub async fn set_entry(&self, params: &DataStoreSetEntry) -> Result<SetEntryResponse, Error> {
-        datastore::set_entry(&SetEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-            match_version: params.match_version.clone(),
-            exclusive_create: params.exclusive_create,
-            roblox_entry_user_ids: params.roblox_entry_user_ids.clone(),
-            roblox_entry_attributes: params.roblox_entry_attributes.clone(),
-            data: params.data.clone(),
-        })
+        datastore::set_entry(
+            &self.http,
+            &SetEntryParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+                match_version: params.match_version.clone(),
+                exclusive_create: params.exclusive_create,
+                roblox_entry_user_ids: params.roblox_entry_user_ids.clone(),
+                roblox_entry_attributes: params.roblox_entry_attributes.clone(),
+                data: params.data.clone(),
+            },
+        )
         .await
     }
 
@@ -271,28 +286,32 @@ impl RbxDataStore {
     /// If the value _does_ exist, but it is _not_ a number, then the increment
     /// process will fail, and a DataStore error will be returned in the result.
     pub async fn increment_entry(&self, params: &DataStoreIncrementEntry) -> Result<f64, Error> {
-        datastore::increment_entry(&IncrementEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-            roblox_entry_user_ids: params.roblox_entry_user_ids.clone(),
-            roblox_entry_attributes: params.roblox_entry_attributes.clone(),
-            increment_by: params.increment_by,
-        })
+        datastore::increment_entry(
+            &self.http,
+            &IncrementEntryParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+                roblox_entry_user_ids: params.roblox_entry_user_ids.clone(),
+                roblox_entry_attributes: params.roblox_entry_attributes.clone(),
+                increment_by: params.increment_by,
+            },
+        )
         .await
     }
 
     /// Delete an entry.
     pub async fn delete_entry(&self, params: &DataStoreDeleteEntry) -> Result<(), Error> {
-        datastore::delete_entry(&DeleteEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-        })
+        datastore::delete_entry(
+            &self.http,
+            &DeleteEntryParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+            },
+        )
         .await
     }
 
@@ -303,18 +322,20 @@ impl RbxDataStore {
         &self,
         params: &DataStoreListEntryVersions,
     ) -> Result<ListEntryVersionsResponse, Error> {
-        datastore::list_entry_versions(&ListEntryVersionsParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-            start_time: params.start_time.clone(),
-            end_time: params.end_time.clone(),
-            sort_order: params.sort_order.clone(),
-            limit: params.limit,
-            cursor: params.cursor.clone(),
-        })
+        datastore::list_entry_versions(
+            &self.http,
+            &ListEntryVersionsParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+                start_time: params.start_time.clone(),
+                end_time: params.end_time.clone(),
+                sort_order: params.sort_order.clone(),
+                limit: params.limit,
+                cursor: params.cursor.clone(),
+            },
+        )
         .await
     }
 
@@ -323,20 +344,22 @@ impl RbxDataStore {
         &self,
         params: &DataStoreGetEntryVersion,
     ) -> Result<String, Error> {
-        datastore::get_entry_version(&GetEntryVersionParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            key: params.key.clone(),
-            version_id: params.version_id.clone(),
-        })
+        datastore::get_entry_version(
+            &self.http,
+            &GetEntryVersionParams {
+                universe_id: self.universe_id,
+                datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                key: params.key.clone(),
+                version_id: params.version_id.clone(),
+            },
+        )
         .await
     }
 }
 
 pub struct RbxOrderedDataStore {
-    pub api_key: String,
+    http: HttpClient,
     pub universe_id: UniverseId,
 }
 
@@ -383,16 +406,18 @@ impl RbxOrderedDataStore {
         &self,
         params: &OrderedDataStoreListEntries,
     ) -> Result<OrderedListEntriesResponse, Error> {
-        ordered_datastore::list_entries(&OrderedListEntriesParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            max_page_size: params.max_page_size,
-            page_token: params.page_token.clone(),
-            order_by: params.order_by.clone(),
-            filter: params.filter.clone(),
-        })
+        ordered_datastore::list_entries(
+            &self.http,
+            &OrderedListEntriesParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                max_page_size: params.max_page_size,
+                page_token: params.page_token.clone(),
+                order_by: params.order_by.clone(),
+                filter: params.filter.clone(),
+            },
+        )
         .await
     }
 
@@ -401,38 +426,44 @@ impl RbxOrderedDataStore {
         &self,
         params: &OrderedDataStoreCreateEntry,
     ) -> Result<OrderedEntry, Error> {
-        ordered_datastore::create_entry(&OrderedCreateEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            id: params.id.to_string(),
-            value: params.value,
-        })
+        ordered_datastore::create_entry(
+            &self.http,
+            &OrderedCreateEntryParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                id: params.id.to_string(),
+                value: params.value,
+            },
+        )
         .await
     }
 
     /// Get an entry
     pub async fn get_entry(&self, params: &OrderedDataStoreEntry) -> Result<OrderedEntry, Error> {
-        ordered_datastore::get_entry(&OrderedEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            id: params.id.to_string(),
-        })
+        ordered_datastore::get_entry(
+            &self.http,
+            &OrderedEntryParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                id: params.id.to_string(),
+            },
+        )
         .await
     }
 
     /// Delete an entry
     pub async fn delete_entry(&self, params: &OrderedDataStoreEntry) -> Result<(), Error> {
-        ordered_datastore::delete_entry(&OrderedEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            id: params.id.to_string(),
-        })
+        ordered_datastore::delete_entry(
+            &self.http,
+            &OrderedEntryParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                id: params.id.to_string(),
+            },
+        )
         .await
     }
 
@@ -441,15 +472,17 @@ impl RbxOrderedDataStore {
         &self,
         params: &OrderedDataStoreUpdateEntry,
     ) -> Result<OrderedEntry, Error> {
-        ordered_datastore::update_entry(&OrderedUpdateEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            id: params.id.to_string(),
-            value: params.value,
-            allow_missing: params.allow_missing,
-        })
+        ordered_datastore::update_entry(
+            &self.http,
+            &OrderedUpdateEntryParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                id: params.id.to_string(),
+                value: params.value,
+                allow_missing: params.allow_missing,
+            },
+        )
         .await
     }
 
@@ -458,21 +491,22 @@ impl RbxOrderedDataStore {
         &self,
         params: &OrderedDataStoreIncrementEntry,
     ) -> Result<OrderedEntry, Error> {
-        ordered_datastore::increment_entry(&OrderedIncrementEntryParams {
-            api_key: self.api_key.clone(),
-            universe_id: self.universe_id,
-            ordered_datastore_name: params.name.clone(),
-            scope: params.scope.clone(),
-            id: params.id.to_string(),
-            increment: params.increment,
-        })
+        ordered_datastore::increment_entry(
+            &self.http,
+            &OrderedIncrementEntryParams {
+                universe_id: self.universe_id,
+                ordered_datastore_name: params.name.clone(),
+                scope: params.scope.clone(),
+                id: params.id.to_string(),
+                increment: params.increment,
+            },
+        )
         .await
     }
 }
 
 pub struct RbxAssets {
-    /// Roblox API key.
-    pub api_key: String,
+    http: HttpClient,
 }
 
 pub struct CreateAsset {
@@ -507,11 +541,13 @@ pub struct ArchiveAsset {
 impl RbxAssets {
     /// Create an asset
     pub async fn create(&self, params: &CreateAsset) -> Result<AssetOperation, Error> {
-        assets::create_asset(&CreateAssetParams {
-            api_key: self.api_key.clone(),
-            asset: params.asset.clone(),
-            filepath: params.filepath.clone(),
-        })
+        assets::create_asset(
+            &self.http,
+            &CreateAssetParams {
+                asset: params.asset.clone(),
+                filepath: params.filepath.clone(),
+            },
+        )
         .await
     }
 
@@ -519,22 +555,26 @@ impl RbxAssets {
         &self,
         params: &CreateAssetWithContents<'a>,
     ) -> Result<AssetOperation, Error> {
-        assets::create_asset_with_contents(&CreateAssetParamsWithContents {
-            api_key: self.api_key.clone(),
-            asset: params.asset.clone(),
-            contents: params.contents,
-        })
+        assets::create_asset_with_contents(
+            &self.http,
+            &CreateAssetParamsWithContents {
+                asset: params.asset.clone(),
+                contents: params.contents,
+            },
+        )
         .await
     }
 
     /// Update an asset
     pub async fn update(&self, params: &UpdateAsset) -> Result<AssetOperation, Error> {
-        assets::update_asset(&UpdateAssetParams {
-            api_key: self.api_key.clone(),
-            asset_id: params.asset_id,
-            asset_type: params.asset_type,
-            filepath: params.filepath.clone(),
-        })
+        assets::update_asset(
+            &self.http,
+            &UpdateAssetParams {
+                asset_id: params.asset_id,
+                asset_type: params.asset_type,
+                filepath: params.filepath.clone(),
+            },
+        )
         .await
     }
 
@@ -543,35 +583,43 @@ impl RbxAssets {
         &self,
         params: &GetAssetOperation,
     ) -> Result<AssetGetOperation, Error> {
-        assets::get_operation(&GetAssetOperationParams {
-            api_key: self.api_key.clone(),
-            operation_id: params.operation_id.clone(),
-        })
+        assets::get_operation(
+            &self.http,
+            &GetAssetOperationParams {
+                operation_id: params.operation_id.clone(),
+            },
+        )
         .await
     }
 
     pub async fn get(&self, params: &GetAsset) -> Result<AssetInfo, Error> {
-        assets::get_asset(&GetAssetParams {
-            api_key: self.api_key.clone(),
-            asset_id: params.asset_id,
-            read_mask: params.read_mask.clone(),
-        })
+        assets::get_asset(
+            &self.http,
+            &GetAssetParams {
+                asset_id: params.asset_id,
+                read_mask: params.read_mask.clone(),
+            },
+        )
         .await
     }
 
     pub async fn archive(&self, params: &ArchiveAsset) -> Result<AssetInfo, Error> {
-        assets::archive_asset(&ArchiveAssetParams {
-            api_key: self.api_key.clone(),
-            asset_id: params.asset_id,
-        })
+        assets::archive_asset(
+            &self.http,
+            &ArchiveAssetParams {
+                asset_id: params.asset_id,
+            },
+        )
         .await
     }
 
     pub async fn restore(&self, params: &ArchiveAsset) -> Result<AssetInfo, Error> {
-        assets::restore_asset(&ArchiveAssetParams {
-            api_key: self.api_key.clone(),
-            asset_id: params.asset_id,
-        })
+        assets::restore_asset(
+            &self.http,
+            &ArchiveAssetParams {
+                asset_id: params.asset_id,
+            },
+        )
         .await
     }
 }
@@ -583,28 +631,53 @@ impl RbxAssets {
 ///
 /// let cloud = RbxCloud::new("API_KEY");
 /// ```
-#[derive(Debug)]
+///
+/// To configure timeouts or a proxy, build an [`HttpClient`] first:
+///
+/// ```rust,no_run
+/// use std::time::Duration;
+/// use rbxcloud::rbx::{http::HttpClient, v1::RbxCloud};
+///
+/// # fn main() -> Result<(), rbxcloud::rbx::error::Error> {
+/// let http = HttpClient::builder("API_KEY")
+///     .timeout(Duration::from_secs(30))
+///     .build()?;
+/// let cloud = RbxCloud::with_http(http);
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone)]
 pub struct RbxCloud {
-    /// Roblox API key.
-    pub api_key: String,
+    http: HttpClient,
 }
 
 impl RbxCloud {
+    /// Create a client with default HTTP settings.
     pub fn new(api_key: &str) -> RbxCloud {
         RbxCloud {
-            api_key: api_key.to_string(),
+            http: HttpClient::new(api_key),
         }
+    }
+
+    /// Create a client from a pre-configured [`HttpClient`].
+    pub fn with_http(http: HttpClient) -> RbxCloud {
+        RbxCloud { http }
+    }
+
+    /// The underlying HTTP client.
+    pub fn http(&self) -> &HttpClient {
+        &self.http
     }
 
     pub fn assets(&self) -> RbxAssets {
         RbxAssets {
-            api_key: self.api_key.clone(),
+            http: self.http.clone(),
         }
     }
 
     pub fn experience(&self, universe_id: UniverseId, place_id: PlaceId) -> RbxExperience {
         RbxExperience {
-            api_key: self.api_key.clone(),
+            http: self.http.clone(),
             universe_id,
             place_id,
         }
@@ -612,7 +685,7 @@ impl RbxCloud {
 
     pub fn messaging(&self, universe_id: UniverseId, topic: &str) -> RbxMessaging {
         RbxMessaging {
-            api_key: self.api_key.clone(),
+            http: self.http.clone(),
             universe_id,
             topic: topic.to_string(),
         }
@@ -620,14 +693,14 @@ impl RbxCloud {
 
     pub fn datastore(&self, universe_id: UniverseId) -> RbxDataStore {
         RbxDataStore {
-            api_key: self.api_key.clone(),
+            http: self.http.clone(),
             universe_id,
         }
     }
 
     pub fn ordered_datastore(&self, universe_id: UniverseId) -> RbxOrderedDataStore {
         RbxOrderedDataStore {
-            api_key: self.api_key.clone(),
+            http: self.http.clone(),
             universe_id,
         }
     }

@@ -1,8 +1,6 @@
 # Roblox Open Cloud CLI &emsp; ![Logo](imgs/icon_32_bottom.png)
-[![CI](https://github.com/Sleitnick/rbxcloud/actions/workflows/ci.yaml/badge.svg)](https://github.com/Sleitnick/rbxcloud/actions/workflows/ci.yaml)
-[![Release](https://github.com/Sleitnick/rbxcloud/actions/workflows/release.yaml/badge.svg?event=push)](https://github.com/Sleitnick/rbxcloud/actions/workflows/release.yaml)
-[![Crate](https://img.shields.io/crates/v/rbxcloud.svg)](https://crates.io/crates/rbxcloud)
-[![Docs](https://docs.rs/rbxcloud/badge.svg)](https://docs.rs/rbxcloud)
+[![CI](https://github.com/Stinson-Moss/rbxcloud/actions/workflows/ci.yaml/badge.svg)](https://github.com/Stinson-Moss/rbxcloud/actions/workflows/ci.yaml)
+[![Release](https://github.com/Stinson-Moss/rbxcloud/actions/workflows/release.yaml/badge.svg?event=push)](https://github.com/Stinson-Moss/rbxcloud/actions/workflows/release.yaml)
 
 The `rbxcloud` CLI lets developers easily communicate with the Roblox Open Cloud APIs. The underlying library can also be used to build tools and applications that utilize the various APIs.
 
@@ -19,15 +17,18 @@ Possible use-cases:
 | | API v1 |
 | -- | -- |
 | :white_check_mark: | Assets |
-| :white_check_mark: | Data Stores |
+| :white_check_mark: | Data Stores <small>(superseded by v2)</small> |
+| :white_check_mark: | Ordered Data Stores <small>(superseded by v2)</small> |
 | :white_check_mark: | Messaging |
 | :white_check_mark: | Place Publishing |
 
 | | API v2 |
 | -- | -- |
-| :x: | Data Stores |
+| :white_check_mark: | Data Stores |
+| :white_check_mark: | Ordered Data Stores |
+| :white_check_mark: | Memory Stores |
 | :white_check_mark: | Groups |
-| :white_check_mark: | Universes |
+| :white_check_mark: | Universes (incl. publish message) |
 | :white_check_mark: | Places |
 | :x: | Instances |
 | :white_check_mark: | Subscriptions |
@@ -44,32 +45,37 @@ Possible use-cases:
 The goal of this project is to support all API endpoints that Roblox provides.
 
 ## Install CLI
+### mise-en-place
+```sh
+$ mise use github:Stinson-Moss/rbxcloud@0.18.0
+```
+
 ### Aftman
 Run the `aftman add` command within your project directory. This will add `rbxcloud` to the project's `aftman.toml` file (or create one if it doesn't yet exist).
 ```sh
-$ aftman add Sleitnick/rbxcloud@0.17.0
+$ aftman add Stinson-Moss/rbxcloud@0.18.0
 ```
 
 ### From Release
-Download and unzip the tool for your OS from the [releases](https://github.com/Sleitnick/rbxcloud/releases) page. You will then need to put it in your desired location and point your path variable to the executable location.
+Download and unzip the tool for your OS from the [releases](https://github.com/Stinson-Moss/rbxcloud/releases) page. You will then need to put it in your desired location and point your path variable to the executable location.
 
 ## CLI Documentation
-Visit the documentation site for information on installation and usage: https://sleitnick.github.io/rbxcloud/
+Visit the documentation site for information on installation and usage: https://stinson-moss.github.io/rbxcloud/
 
 ## Install Rust Library
 The library built for the CLI tool is available to use directly in Rust projects. This is essentially an SDK for the Roblox Open Cloud APIs.
 
 ### Add Dependency
 
-To use `rbxcloud` in a Rust project, simply add `rbxcloud` to the `Cargo.toml` dependency list.
+This fork is not published to crates.io, so add it as a git dependency in `Cargo.toml`:
 ```toml
 [dependencies]
-rbxcloud = "0.17.0"
+rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.18.0" }
 ```
 
 Alternatively, use `cargo add`.
 ```sh
-$ cargo add rbxcloud
+$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.18.0
 ```
 
-See the [docs.rs](https://docs.rs/rbxcloud/latest/rbxcloud/) page for library documentation.
+Run `cargo doc --open` in this repository (or `mise run docs:rust`) for library documentation.

@@ -2,7 +2,7 @@ use clap::{Args, Subcommand, ValueEnum};
 
 use rbxcloud::rbx::{
     types::{PlaceId, UniverseId},
-    v1::{PublishVersionType, RbxCloud},
+    v1::PublishVersionType,
 };
 
 #[derive(Debug, Subcommand)]
@@ -58,7 +58,7 @@ impl Experience {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let publish_version_type = match version_type {
                     VersionType::Published => PublishVersionType::Published,
                     VersionType::Saved => PublishVersionType::Saved,

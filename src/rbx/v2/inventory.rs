@@ -2,12 +2,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::rbx::{error::Error, types::RobloxUserId, util::QueryString};
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ListInventoryItemsParams {
-    pub api_key: String,
     pub user_id: RobloxUserId,
     pub max_page_size: Option<u32>,
     pub page_token: Option<String>,
@@ -17,62 +16,64 @@ pub struct ListInventoryItemsParams {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItems {
-    inventory_items: Vec<InventoryItem>,
-    next_page_token: String,
+    #[serde(default)]
+    pub inventory_items: Vec<InventoryItem>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItem {
-    path: String,
+    pub path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    asset_details: Option<InventoryItemAssetDetails>,
+    pub asset_details: Option<InventoryItemAssetDetails>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    badge_details: Option<InventoryItemBadgeDetails>,
+    pub badge_details: Option<InventoryItemBadgeDetails>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    game_pass_details: Option<InventoryItemGamePassDetails>,
+    pub game_pass_details: Option<InventoryItemGamePassDetails>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    private_server_details: Option<InventoryItemPrivateServerDetails>,
+    pub private_server_details: Option<InventoryItemPrivateServerDetails>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    add_time: Option<String>,
+    pub add_time: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItemAssetDetails {
-    asset_id: String,
-    instance_id: String,
-    inventory_item_asset_type: InventoryItemAssetType,
+    pub asset_id: String,
+    pub instance_id: String,
+    pub inventory_item_asset_type: InventoryItemAssetType,
     #[serde(skip_serializing_if = "Option::is_none")]
-    collectible_details: Option<InventoryItemCollectibleDetails>,
+    pub collectible_details: Option<InventoryItemCollectibleDetails>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItemBadgeDetails {
-    badge_id: String,
+    pub badge_id: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItemGamePassDetails {
-    game_pass_id: String,
+    pub game_pass_id: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItemPrivateServerDetails {
-    private_server_id: String,
+    pub private_server_id: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InventoryItemCollectibleDetails {
-    item_id: String,
-    instance_id: String,
-    instance_state: InventoryItemInstanceState,
+    pub item_id: String,
+    pub instance_id: String,
+    pub instance_state: InventoryItemInstanceState,
     #[serde(skip_serializing_if = "Option::is_none")]
-    serial_number: Option<u64>,
+    pub serial_number: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -81,6 +82,9 @@ pub enum InventoryItemInstanceState {
     CollectibleItemInstanceStateUnspecified,
     Available,
     Hold,
+    /// A value added by Roblox after this version of rbxcloud.
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -138,13 +142,15 @@ pub enum InventoryItemAssetType {
     DynamicHead,
     CreatedPlace,
     PurchasedPlace,
+    /// A value added by Roblox after this version of rbxcloud.
+    #[serde(other)]
+    Unknown,
 }
 
 pub async fn list_inventory_items(
+    http: &HttpClient,
     params: &ListInventoryItemsParams,
 ) -> Result<InventoryItems, Error> {
-    let client = reqwest::Client::new();
-
     let url = format!(
         "https://apis.roblox.com/cloud/v2/users/{userId}/inventory-items",
         userId = params.user_id,
@@ -161,20 +167,7 @@ pub async fn list_inventory_items(
         query.push(("filter", filter.clone()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<InventoryItems>().await?;
-    Ok(body)
+    http::json::<InventoryItems>(res).await
 }

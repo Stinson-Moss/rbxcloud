@@ -5,3 +5,6 @@ test.sh
 *.ai
 *.psd
 .DS_Store
+
+# mkdocs output (`mise run docs:build`)
+/site

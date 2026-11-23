@@ -1,7 +1,7 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::{PlaceId, UniverseId},
-    v2::{luau_execution::LuauExecutionTaskLogView, Client},
+    v2::luau_execution::LuauExecutionTaskLogView,
 };
 use tokio::fs;
 
@@ -136,7 +136,7 @@ impl Luau {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
 
                 let luau = client.luau(UniverseId(universe_id), PlaceId(place_id), version_id);
 
@@ -177,7 +177,7 @@ impl Luau {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
 
                 let luau = client.luau(UniverseId(universe_id), PlaceId(place_id), version_id);
 
@@ -207,7 +207,7 @@ impl Luau {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
 
                 let luau = client.luau(UniverseId(universe_id), PlaceId(place_id), version_id);
 

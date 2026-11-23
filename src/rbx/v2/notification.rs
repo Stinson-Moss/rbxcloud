@@ -4,9 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::rbx::{error::Error, types::RobloxUserId};
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum NotificationType {
     TypeUnspecified,
     Moment,
@@ -16,7 +17,7 @@ impl std::fmt::Display for NotificationType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{:?}",
+            "{}",
             match self {
                 Self::TypeUnspecified => "TYPE_UNSPECIFIED",
                 Self::Moment => "MOMENT",
@@ -48,7 +49,7 @@ pub struct NotificationSource {
 #[serde(rename_all = "camelCase")]
 pub struct NotificationPayload {
     pub message_id: String,
-    #[serde(rename(serialize = "type"))]
+    #[serde(rename = "type")]
     pub notification_type: NotificationType,
     pub parameters: Option<HashMap<String, Parameter>>,
     pub join_experience: Option<JoinExperience>,
@@ -64,7 +65,6 @@ pub struct Notification {
 
 #[derive(Debug)]
 pub struct NotificationParams {
-    pub api_key: String,
     pub user_id: RobloxUserId,
     pub notification: Notification,
 }
@@ -76,30 +76,16 @@ pub struct NotificationResponse {
     pub id: String,
 }
 
-pub async fn send_notification(params: &NotificationParams) -> Result<NotificationResponse, Error> {
-    let client = reqwest::Client::new();
-
+pub async fn send_notification(
+    http: &HttpClient,
+    params: &NotificationParams,
+) -> Result<NotificationResponse, Error> {
     let url = format!(
         "https://apis.roblox.com/cloud/v2/users/{user}/notifications",
-        user = &params.user_id,
+        user = params.user_id,
     );
 
-    let body = serde_json::to_string(&params.notification)?;
+    let res = http.post(url).json(&params.notification).send().await?;
 
-    let res = client
-        .post(url)
-        .header("x-api-key", &params.api_key)
-        .body(body)
-        .send()
-        .await?;
-
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<NotificationResponse>().await?;
-    Ok(body)
+    http::json::<NotificationResponse>(res).await
 }

@@ -1,10 +1,7 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::RobloxUserId,
-    v2::{
-        user::{UserThumbnailFormat, UserThumbnailShape, UserThumbnailSize},
-        Client,
-    },
+    v2::user::{UserThumbnailFormat, UserThumbnailShape, UserThumbnailSize},
 };
 
 #[derive(Debug, Subcommand)]
@@ -66,7 +63,7 @@ impl User {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let user_client = client.user();
                 let res = user_client.get_user(RobloxUserId(user_id)).await;
                 match res {
@@ -90,7 +87,7 @@ impl User {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let user_client = client.user();
                 let res = user_client
                     .generate_thumbnail(RobloxUserId(user_id), size, format, shape)

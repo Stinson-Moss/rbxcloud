@@ -4,6 +4,28 @@ The `rbxcloud` project is open-source and welcomes PRs. If you wish to contribut
 ## Purpose
 The goal of the `rbxcloud` project is to provide an API and CLI tool to access Roblox's [Open Cloud](https://create.roblox.com/docs/cloud/open-cloud). As Roblox's Open Cloud matures and adds new features, the `rbxcloud` project should attempt to mirror these additions.
 
+## Development Setup
+The project's tools are managed with [mise-en-place](https://mise.jdx.dev). With mise installed, run this once in the repository:
+```sh
+$ mise install
+```
+
+This installs the Rust toolchain (with `clippy` and `rustfmt`) and [`uv`](https://docs.astral.sh/uv/), which runs the Python helper scripts and the docs site. Run `mise tasks` to list every command. The most common ones:
+
+| Command | What it does |
+| -- | -- |
+| `mise run build` | Debug build |
+| `mise run cli -- <args>` | Run the CLI from source, e.g. `mise run cli -- universe get -u 123` |
+| `mise run test` | Unit tests and doctests |
+| `mise run lint` | Formatting check and clippy, exactly as CI runs them |
+| `mise run fix` | Apply clippy suggestions and format |
+| `mise run ci` | Everything CI checks; run this before opening a PR |
+| `mise run docs:cli` | Regenerate the generated CLI docs pages from `--help` |
+| `mise run docs:serve` | Preview the docs site locally |
+| `mise run release:check` | Pre-release checks, then prints the tag commands |
+
+On Windows, building requires the Visual Studio C++ build tools (MSVC and the Windows SDK). Run cargo from PowerShell or cmd rather than Git Bash, whose `link` command shadows the MSVC linker.
+
 ## Structure
 The `rbxcloud` project is split into two main chunks:
 1. Rust library for accessing Roblox Open Cloud
@@ -53,7 +75,7 @@ When adding a new feature to support a new Roblox Open Cloud endpoint, please en
 - The "low-level" implementation should be present within the `src/rbx/vX` directory, where "X" represents the Roblox Open Cloud resource version.
 - The "high-level" client implementation should be present within the `src/rbx/mod.rs` source file. This is the main API for user code, as well as the CLI.
 - The CLI implementation should be present within the `src/cli` directory, and wired up within the `src/cli/mod.rs` source file.
-- Documentation has been added to the `docs/cli` directory.
+- Documentation has been added to the `docs/cli` directory (for commands listed in `scripts/gen_cli_docs.py`, regenerate it with `mise run docs:cli`).
 - The documentation `mkdocs.yml` configuration file has been updated to include any new documentation files.
 
 As an example, take a look at the implementation for the Universe endpoints:

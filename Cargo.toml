@@ -1,12 +1,12 @@
 [package]
 name = "rbxcloud"
-version = "0.17.0"
+version = "0.18.0"
 description = "CLI and SDK for the Roblox Open Cloud APIs"
 authors = ["Stephen Leitnick"]
 license = "MIT"
-repository = "https://github.com/Sleitnick/rbxcloud"
+repository = "https://github.com/Stinson-Moss/rbxcloud"
 readme = "README.md"
-documentation = "https://sleitnick.github.io/rbxcloud/"
+documentation = "https://stinson-moss.github.io/rbxcloud/"
 edition = "2021"
 
 [dependencies]
@@ -20,3 +20,4 @@ serde_json = "1.0.115"
 tokio = { version = "1.36.0", features = ["full"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 rand = "0.9.0"
+ruzstd = "0.8"

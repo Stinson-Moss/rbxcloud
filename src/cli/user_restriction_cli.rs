@@ -1,7 +1,7 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::{PlaceId, RobloxUserId, UniverseId},
-    v2::{Client, UserRestrictionParams},
+    v2::UserRestrictionParams,
 };
 
 #[derive(Debug, Subcommand)]
@@ -151,13 +151,10 @@ impl UserRestriction {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let user_restriction_client = client.user_restriction(UniverseId(universe_id));
                 let res = user_restriction_client
-                    .get_user_restriction(
-                        RobloxUserId(user_id),
-                        place_id.and_then(|id| Some(PlaceId(id))),
-                    )
+                    .get_user_restriction(RobloxUserId(user_id), place_id.map(PlaceId))
                     .await;
                 match res {
                     Ok(info) => {
@@ -184,12 +181,12 @@ impl UserRestriction {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let mut user_restriction_client = client.user_restriction(UniverseId(universe_id));
                 let res = user_restriction_client
                     .update_user_restriction(&UserRestrictionParams {
                         user_id: RobloxUserId(user_id),
-                        place_id: place_id.and_then(|id| Some(PlaceId(id))),
+                        place_id: place_id.map(PlaceId),
                         active,
                         duration,
                         private_reason,
@@ -219,15 +216,10 @@ impl UserRestriction {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let user_restriction_client = client.user_restriction(UniverseId(universe_id));
                 let res = user_restriction_client
-                    .list_user_restrictions(
-                        place_id.and_then(|id| Some(PlaceId(id))),
-                        page_size,
-                        filter,
-                        token,
-                    )
+                    .list_user_restrictions(place_id.map(PlaceId), page_size, filter, token)
                     .await;
                 match res {
                     Ok(info) => {
@@ -251,15 +243,10 @@ impl UserRestriction {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let user_restriction_client = client.user_restriction(UniverseId(universe_id));
                 let res = user_restriction_client
-                    .list_user_restriction_logs(
-                        place_id.and_then(|id| Some(PlaceId(id))),
-                        page_size,
-                        filter,
-                        token,
-                    )
+                    .list_user_restriction_logs(place_id.map(PlaceId), page_size, filter, token)
                     .await;
                 match res {
                     Ok(info) => {

@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use rbxcloud::rbx::{types::RobloxUserId, v2::Client};
+use rbxcloud::rbx::types::RobloxUserId;
 
 #[derive(Debug, Subcommand)]
 pub enum InventoryCommands {
@@ -48,7 +48,7 @@ impl Inventory {
                 filter,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
 
                 let inventory = client.inventory();
 

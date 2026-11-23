@@ -4,16 +4,17 @@
 //! struct, obtained through the `RbxCloud` struct.
 //!
 
-use reqwest::Response;
-use serde::Serialize;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::rbx::v1::{PageSize, UniverseId};
-use crate::rbx::{error::Error, util::QueryString};
+use crate::rbx::{
+    error::Error,
+    http::{self, HttpClient},
+    util::QueryString,
+};
 
 pub struct OrderedListEntriesParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub ordered_datastore_name: String,
     pub scope: Option<String>,
@@ -24,7 +25,6 @@ pub struct OrderedListEntriesParams {
 }
 
 pub struct OrderedCreateEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub ordered_datastore_name: String,
     pub scope: Option<String>,
@@ -33,7 +33,6 @@ pub struct OrderedCreateEntryParams {
 }
 
 pub struct OrderedUpdateEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub ordered_datastore_name: String,
     pub scope: Option<String>,
@@ -43,7 +42,6 @@ pub struct OrderedUpdateEntryParams {
 }
 
 pub struct OrderedIncrementEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub ordered_datastore_name: String,
     pub scope: Option<String>,
@@ -67,42 +65,10 @@ pub struct OrderedListEntriesResponse {
 }
 
 pub struct OrderedEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub ordered_datastore_name: String,
     pub scope: Option<String>,
     pub id: String,
-}
-
-async fn handle_res<T: DeserializeOwned>(res: Response) -> Result<T, Error> {
-    let status = res.status();
-    match status.is_success() {
-        true => {
-            let body = res.json::<T>().await?;
-            Ok(body)
-        }
-        false => {
-            let text = res.text().await?;
-            Err(Error::HttpStatusError {
-                code: status.as_u16(),
-                msg: text,
-            })
-        }
-    }
-}
-
-async fn handle_res_ok(res: Response) -> Result<(), Error> {
-    let status = res.status();
-    match status.is_success() {
-        true => Ok(()),
-        false => {
-            let text = res.text().await?;
-            Err(Error::HttpStatusError {
-                code: status.as_u16(),
-                msg: text,
-            })
-        }
-    }
 }
 
 fn build_url(
@@ -123,9 +89,9 @@ fn build_url(
 
 /// List entries of an OrderedDataStore.
 pub async fn list_entries(
+    http: &HttpClient,
     params: &OrderedListEntriesParams,
 ) -> Result<OrderedListEntriesResponse, Error> {
-    let client = reqwest::Client::new();
     let url = build_url(
         "/entries",
         params.universe_id,
@@ -145,18 +111,15 @@ pub async fn list_entries(
     if let Some(filter) = &params.filter {
         query.push(("filter", filter.to_string()));
     }
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
-    handle_res::<OrderedListEntriesResponse>(res).await
+    let res = http.get(url).query(&query).send().await?;
+    http::json::<OrderedListEntriesResponse>(res).await
 }
 
 /// Add a new entry to an OrderedDataStore.
-pub async fn create_entry(params: &OrderedCreateEntryParams) -> Result<OrderedEntry, Error> {
-    let client = reqwest::Client::new();
+pub async fn create_entry(
+    http: &HttpClient,
+    params: &OrderedCreateEntryParams,
+) -> Result<OrderedEntry, Error> {
     let url = build_url(
         "/entries",
         params.universe_id,
@@ -168,51 +131,45 @@ pub async fn create_entry(params: &OrderedCreateEntryParams) -> Result<OrderedEn
         "value": &params.value,
     });
     let body = serde_json::to_string(&body_json)?;
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .query(&query)
         .body(body.clone())
         .send()
         .await?;
-    handle_res::<OrderedEntry>(res).await
+    http::json::<OrderedEntry>(res).await
 }
 
-pub async fn get_entry(params: &OrderedEntryParams) -> Result<OrderedEntry, Error> {
-    let client = reqwest::Client::new();
+pub async fn get_entry(
+    http: &HttpClient,
+    params: &OrderedEntryParams,
+) -> Result<OrderedEntry, Error> {
     let url = build_url(
         format!("/entries/{entry}", entry = params.id).as_str(),
         params.universe_id,
         &params.ordered_datastore_name,
         params.scope.as_deref(),
     );
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
-    handle_res::<OrderedEntry>(res).await
+    let res = http.get(url).send().await?;
+    http::json::<OrderedEntry>(res).await
 }
 
-pub async fn delete_entry(params: &OrderedEntryParams) -> Result<(), Error> {
-    let client = reqwest::Client::new();
+pub async fn delete_entry(http: &HttpClient, params: &OrderedEntryParams) -> Result<(), Error> {
     let url = build_url(
         format!("/entries/{entry}", entry = params.id).as_str(),
         params.universe_id,
         &params.ordered_datastore_name,
         params.scope.as_deref(),
     );
-    let res = client
-        .delete(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
-    handle_res_ok(res).await
+    let res = http.delete(url).send().await?;
+    http::empty(res).await
 }
 
-pub async fn update_entry(params: &OrderedUpdateEntryParams) -> Result<OrderedEntry, Error> {
-    let client = reqwest::Client::new();
+pub async fn update_entry(
+    http: &HttpClient,
+    params: &OrderedUpdateEntryParams,
+) -> Result<OrderedEntry, Error> {
     let url = build_url(
         format!("/entries/{entry}", entry = params.id).as_str(),
         params.universe_id,
@@ -227,19 +184,20 @@ pub async fn update_entry(params: &OrderedUpdateEntryParams) -> Result<OrderedEn
         "value": &params.value,
     });
     let body = serde_json::to_string(&body_json)?;
-    let res = client
+    let res = http
         .patch(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .body(body)
         .query(&query)
         .send()
         .await?;
-    handle_res::<OrderedEntry>(res).await
+    http::json::<OrderedEntry>(res).await
 }
 
-pub async fn increment_entry(params: &OrderedIncrementEntryParams) -> Result<OrderedEntry, Error> {
-    let client = reqwest::Client::new();
+pub async fn increment_entry(
+    http: &HttpClient,
+    params: &OrderedIncrementEntryParams,
+) -> Result<OrderedEntry, Error> {
     let url = build_url(
         format!("/entries/{entry}:increment", entry = params.id).as_str(),
         params.universe_id,
@@ -250,12 +208,11 @@ pub async fn increment_entry(params: &OrderedIncrementEntryParams) -> Result<Ord
         "amount": &params.increment,
     });
     let body = serde_json::to_string(&body_json)?;
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .body(body)
         .send()
         .await?;
-    handle_res::<OrderedEntry>(res).await
+    http::json::<OrderedEntry>(res).await
 }

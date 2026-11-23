@@ -3,7 +3,7 @@
 //! `rbxcloud` is both a CLI and an SDK for the Roblox
 //! Open Cloud APIs. For in-depth documentation on
 //! both the CLI and SDK functionality, visit the
-//! [documentation](https://sleitnick.github.io/rbxcloud/)
+//! [documentation](https://stinson-moss.github.io/rbxcloud/)
 //! website.
 //!
 //! ## Usage
@@ -15,7 +15,7 @@
 //!
 //! Example: Publishing a message.
 //! ```rust,no_run
-//! use rbxcloud::rbx::{error::Error, v1::RbxCloud, types::UniverseId};
+//! use rbxcloud::{error::Error, types::UniverseId, v1::RbxCloud};
 //!
 //! async fn publish_message() -> Result<(), Error> {
 //!     let api_key = "my_api_key";
@@ -36,3 +36,7 @@
 //! end)
 //! ```
 pub mod rbx;
+
+// Re-export the API modules at the crate root so that `rbxcloud::v2::Client`
+// works alongside the original `rbxcloud::rbx::v2::Client` path.
+pub use rbx::*;

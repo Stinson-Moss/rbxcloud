@@ -1,8 +1,5 @@
 use clap::{Args, Subcommand};
-use rbxcloud::rbx::{
-    types::UniverseId,
-    v2::{universe::UpdateUniverseInfo, Client},
-};
+use rbxcloud::rbx::{types::UniverseId, v2::universe::UpdateUniverseInfo};
 
 #[derive(Debug, Subcommand)]
 pub enum UniverseCommands {
@@ -85,7 +82,7 @@ impl Universe {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let universe_client = client.universe(UniverseId(universe_id));
                 let res = universe_client.get().await;
                 match res {
@@ -105,7 +102,7 @@ impl Universe {
                 universe_id,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let universe_client = client.universe(UniverseId(universe_id));
                 let res = universe_client.restart_servers().await;
                 match res {
@@ -120,7 +117,7 @@ impl Universe {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let universe_client = client.universe(UniverseId(universe_id));
                 let res = universe_client
                     .update(
@@ -171,7 +168,7 @@ impl Universe {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let universe_client = client.universe(UniverseId(universe_id));
                 let res = universe_client
                     .update(

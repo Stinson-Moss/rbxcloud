@@ -1,7 +1,7 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::{PlaceId, UniverseId},
-    v2::{place::UpdatePlaceInfo, Client},
+    v2::place::UpdatePlaceInfo,
 };
 
 #[derive(Debug, Subcommand)]
@@ -110,7 +110,7 @@ impl Place {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let place_client = client.place(UniverseId(universe_id), PlaceId(place_id));
                 let res = place_client.get().await;
                 match res {
@@ -133,7 +133,7 @@ impl Place {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let place_client = client.place(UniverseId(universe_id), PlaceId(place_id));
                 let res = place_client
                     .update(
@@ -168,7 +168,7 @@ impl Place {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let place_client = client.place(UniverseId(universe_id), PlaceId(place_id));
                 let res = place_client
                     .update(
@@ -203,7 +203,7 @@ impl Place {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let place_client = client.place(UniverseId(universe_id), PlaceId(place_id));
                 let res = place_client
                     .update(

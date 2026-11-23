@@ -8,6 +8,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::rbx::{
     error::Error,
+    http::{self, HttpClient},
     util::{get_checksum_base64, QueryString},
 };
 
@@ -28,7 +29,6 @@ pub struct ListDataStoresResponse {
 }
 
 pub struct ListDataStoresParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub prefix: Option<String>,
     pub limit: ReturnLimit,
@@ -36,7 +36,6 @@ pub struct ListDataStoresParams {
 }
 
 pub struct ListEntriesParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -61,7 +60,6 @@ pub struct ListEntriesKey {
 }
 
 pub struct GetEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -69,7 +67,6 @@ pub struct GetEntryParams {
 }
 
 pub struct SetEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -92,7 +89,6 @@ pub struct SetEntryResponse {
 }
 
 pub struct IncrementEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -103,7 +99,6 @@ pub struct IncrementEntryParams {
 }
 
 pub struct DeleteEntryParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -111,7 +106,6 @@ pub struct DeleteEntryParams {
 }
 
 pub struct ListEntryVersionsParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -141,7 +135,6 @@ pub struct ListEntryVersion {
 }
 
 pub struct GetEntryVersionParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub datastore_name: String,
     pub scope: Option<String>,
@@ -149,39 +142,31 @@ pub struct GetEntryVersionParams {
     pub version_id: String,
 }
 
-async fn handle_datastore_err<T>(res: Response) -> Result<T, Error> {
-    let response_text = res.text().await?;
+/// Convert a non-success response into a DataStore error when Roblox
+/// returns the DataStore error shape, falling back to a generic HTTP error.
+async fn check_res(res: Response) -> Result<Response, Error> {
+    let status = res.status();
+    if status.is_success() {
+        return Ok(res);
+    }
+    let response_text = res.text().await.unwrap_or_default();
     match serde_json::from_str::<DataStoreErrorResponse>(&response_text) {
         Ok(err_res) => Err(Error::DataStoreError(err_res)),
-        Err(_) => Err(Error::EndpointError(response_text)),
+        Err(_) => Err(http::status_error(status.as_u16(), &response_text)),
     }
 }
 
 async fn handle_res<T: DeserializeOwned>(res: Response) -> Result<T, Error> {
-    match res.status().is_success() {
-        true => {
-            let body = res.json::<T>().await?;
-            Ok(body)
-        }
-        false => handle_datastore_err::<T>(res).await,
-    }
+    let bytes = check_res(res).await?.bytes().await?;
+    Ok(serde_json::from_slice(&bytes)?)
 }
 
 async fn handle_res_string(res: Response) -> Result<String, Error> {
-    match res.status().is_success() {
-        true => {
-            let body = res.text().await?;
-            Ok(body)
-        }
-        false => handle_datastore_err::<String>(res).await,
-    }
+    Ok(check_res(res).await?.text().await?)
 }
 
 async fn handle_res_ok(res: Response) -> Result<(), Error> {
-    match res.status().is_success() {
-        true => Ok(()),
-        false => handle_datastore_err::<()>(res).await,
-    }
+    check_res(res).await.map(|_| ())
 }
 
 fn build_url(endpoint: &str, universe_id: UniverseId) -> String {
@@ -196,9 +181,9 @@ fn build_url(endpoint: &str, universe_id: UniverseId) -> String {
 
 /// List all DataStores within an experience.
 pub async fn list_datastores(
+    http: &HttpClient,
     params: &ListDataStoresParams,
 ) -> Result<ListDataStoresResponse, Error> {
-    let client = reqwest::Client::new();
     let url = build_url("", params.universe_id);
     let mut query: QueryString = vec![("limit", params.limit.to_string())];
     if let Some(prefix) = &params.prefix {
@@ -207,18 +192,15 @@ pub async fn list_datastores(
     if let Some(cursor) = &params.cursor {
         query.push(("cursor", cursor.clone()));
     }
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
     handle_res::<ListDataStoresResponse>(res).await
 }
 
 /// List all entries of a DataStore.
-pub async fn list_entries(params: &ListEntriesParams) -> Result<ListEntriesResponse, Error> {
-    let client = reqwest::Client::new();
+pub async fn list_entries(
+    http: &HttpClient,
+    params: &ListEntriesParams,
+) -> Result<ListEntriesResponse, Error> {
     let url = build_url("/datastore/entries", params.universe_id);
     let mut query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -235,17 +217,11 @@ pub async fn list_entries(params: &ListEntriesParams) -> Result<ListEntriesRespo
     if let Some(cursor) = &params.cursor {
         query.push(("cursor", cursor.clone()));
     }
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
     handle_res::<ListEntriesResponse>(res).await
 }
 
-async fn get_entry_response(params: &GetEntryParams) -> Result<Response, Error> {
-    let client = reqwest::Client::new();
+async fn get_entry_response(http: &HttpClient, params: &GetEntryParams) -> Result<Response, Error> {
     let url = build_url("/datastore/entries/entry", params.universe_id);
     let query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -255,24 +231,22 @@ async fn get_entry_response(params: &GetEntryParams) -> Result<Response, Error> 
         ),
         ("entryKey", params.key.clone()),
     ];
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
     Ok(res)
 }
 
 /// Get the value of an entry as a string.
-pub async fn get_entry_string(params: &GetEntryParams) -> Result<String, Error> {
-    let res = get_entry_response(params).await?;
+pub async fn get_entry_string(http: &HttpClient, params: &GetEntryParams) -> Result<String, Error> {
+    let res = get_entry_response(http, params).await?;
     handle_res_string(res).await
 }
 
 /// Get the value of an entry as a JSON-deserialized type `T`.
-pub async fn get_entry<T: DeserializeOwned>(params: &GetEntryParams) -> Result<T, Error> {
-    let res = get_entry_response(params).await?;
+pub async fn get_entry<T: DeserializeOwned>(
+    http: &HttpClient,
+    params: &GetEntryParams,
+) -> Result<T, Error> {
+    let res = get_entry_response(http, params).await?;
     handle_res::<T>(res).await
 }
 
@@ -286,8 +260,10 @@ fn build_ids_csv(ids: &Option<Vec<RobloxUserId>>) -> String {
 }
 
 /// Set the value of an entry.
-pub async fn set_entry(params: &SetEntryParams) -> Result<SetEntryResponse, Error> {
-    let client = reqwest::Client::new();
+pub async fn set_entry(
+    http: &HttpClient,
+    params: &SetEntryParams,
+) -> Result<SetEntryResponse, Error> {
     let url = build_url("/datastore/entries/entry", params.universe_id);
     let mut query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -303,9 +279,8 @@ pub async fn set_entry(params: &SetEntryParams) -> Result<SetEntryResponse, Erro
     if let Some(exclusive_create) = &params.exclusive_create {
         query.push(("exclusiveCreate", exclusive_create.to_string()));
     }
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .header(
             "roblox-entry-userids",
@@ -327,8 +302,10 @@ pub async fn set_entry(params: &SetEntryParams) -> Result<SetEntryResponse, Erro
 }
 
 /// Increment the value of an entry.
-pub async fn increment_entry(params: &IncrementEntryParams) -> Result<f64, Error> {
-    let client = reqwest::Client::new();
+pub async fn increment_entry(
+    http: &HttpClient,
+    params: &IncrementEntryParams,
+) -> Result<f64, Error> {
     let url = build_url("/datastore/entries/entry/increment", params.universe_id);
     let query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -340,9 +317,8 @@ pub async fn increment_entry(params: &IncrementEntryParams) -> Result<f64, Error
         ("incrementBy", params.increment_by.to_string()),
     ];
     let ids = build_ids_csv(&params.roblox_entry_user_ids);
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("roblox-entry-userids", format!("[{ids}]"))
         .header(
             "roblox-entry-attributes",
@@ -364,8 +340,7 @@ pub async fn increment_entry(params: &IncrementEntryParams) -> Result<f64, Error
 }
 
 /// Delete an entry.
-pub async fn delete_entry(params: &DeleteEntryParams) -> Result<(), Error> {
-    let client = reqwest::Client::new();
+pub async fn delete_entry(http: &HttpClient, params: &DeleteEntryParams) -> Result<(), Error> {
     let url = build_url("/datastore/entries/entry", params.universe_id);
     let query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -375,20 +350,15 @@ pub async fn delete_entry(params: &DeleteEntryParams) -> Result<(), Error> {
         ),
         ("entryKey", params.key.clone()),
     ];
-    let res = client
-        .delete(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.delete(url).query(&query).send().await?;
     handle_res_ok(res).await
 }
 
 /// List all of the versions of an entry.
 pub async fn list_entry_versions(
+    http: &HttpClient,
     params: &ListEntryVersionsParams,
 ) -> Result<ListEntryVersionsResponse, Error> {
-    let client = reqwest::Client::new();
     let url = build_url("/datastore/entries/entry/versions", params.universe_id);
     let mut query: QueryString = vec![
         ("datastoreName", params.datastore_name.clone()),
@@ -409,18 +379,15 @@ pub async fn list_entry_versions(
     if let Some(cursor) = &params.cursor {
         query.push(("cursor", cursor.clone()));
     }
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
     handle_res::<ListEntryVersionsResponse>(res).await
 }
 
 /// Get the value of a specific entry version.
-pub async fn get_entry_version(params: &GetEntryVersionParams) -> Result<String, Error> {
-    let client = reqwest::Client::new();
+pub async fn get_entry_version(
+    http: &HttpClient,
+    params: &GetEntryVersionParams,
+) -> Result<String, Error> {
     let url = build_url(
         "/datastore/entries/entry/versions/version",
         params.universe_id,
@@ -434,11 +401,6 @@ pub async fn get_entry_version(params: &GetEntryVersionParams) -> Result<String,
         ("entryKey", params.key.to_string()),
         ("versionId", params.version_id.to_string()),
     ];
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
     handle_res_string(res).await
 }

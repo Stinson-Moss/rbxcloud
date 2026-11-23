@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::rbx::{error::Error, types::GroupId, util::QueryString};
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 impl std::fmt::Display for GroupId {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -11,7 +11,6 @@ impl std::fmt::Display for GroupId {
 }
 
 pub struct GetGroupParams {
-    pub api_key: String,
     pub group_id: GroupId,
 }
 
@@ -32,7 +31,6 @@ pub struct GetGroupResponse {
 }
 
 pub struct GetGroupShoutParams {
-    pub api_key: String,
     pub group_id: GroupId,
 }
 
@@ -47,7 +45,6 @@ pub struct GetGroupShoutResponse {
 }
 
 pub struct ListGroupRolesParams {
-    pub api_key: String,
     pub group_id: GroupId,
     pub max_page_size: Option<u32>,
     pub page_token: Option<String>,
@@ -98,7 +95,6 @@ pub struct ListGroupRolesResponse {
 }
 
 pub struct ListGroupMembershipsParams {
-    pub api_key: String,
     pub group_id: GroupId,
     pub max_page_size: Option<u32>,
     pub page_token: Option<String>,
@@ -109,10 +105,16 @@ pub struct ListGroupMembershipsParams {
 #[serde(rename_all = "camelCase")]
 pub struct GroupMembership {
     pub path: String,
+    #[serde(default)]
     pub create_time: String,
+    #[serde(default)]
     pub update_time: String,
     pub user: String,
+    /// Primary role. Prefer `roles`, which lists every role the member holds.
+    #[serde(default)]
     pub role: String,
+    #[serde(default)]
+    pub roles: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -122,64 +124,41 @@ pub struct ListGroupMembershipsResponse {
     pub next_page_token: Option<String>,
 }
 
-pub async fn get_group(params: &GetGroupParams) -> Result<GetGroupResponse, Error> {
-    let client = reqwest::Client::new();
-
+pub async fn get_group(
+    http: &HttpClient,
+    params: &GetGroupParams,
+) -> Result<GetGroupResponse, Error> {
     let url = format!(
         "https://apis.roblox.com/cloud/v2/groups/{groupId}",
-        groupId = &params.group_id,
+        groupId = params.group_id,
     );
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
+    let res = http.get(url).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<GetGroupResponse>().await?;
-    Ok(body)
+    http::json::<GetGroupResponse>(res).await
 }
 
-pub async fn get_group_shout(params: &GetGroupShoutParams) -> Result<GetGroupShoutResponse, Error> {
-    let client = reqwest::Client::new();
-
+pub async fn get_group_shout(
+    http: &HttpClient,
+    params: &GetGroupShoutParams,
+) -> Result<GetGroupShoutResponse, Error> {
     let url = format!(
         "https://apis.roblox.com/cloud/v2/groups/{groupId}/shout",
-        groupId = &params.group_id,
+        groupId = params.group_id,
     );
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
+    let res = http.get(url).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<GetGroupShoutResponse>().await?;
-    Ok(body)
+    http::json::<GetGroupShoutResponse>(res).await
 }
 
 pub async fn list_group_roles(
+    http: &HttpClient,
     params: &ListGroupRolesParams,
 ) -> Result<ListGroupRolesResponse, Error> {
-    let client = reqwest::Client::new();
-
     let url = format!(
         "https://apis.roblox.com/cloud/v2/groups/{groupId}/roles",
-        groupId = &params.group_id,
+        groupId = params.group_id,
     );
 
     let mut query: QueryString = vec![];
@@ -190,32 +169,18 @@ pub async fn list_group_roles(
         query.push(("pageToken", page_token.clone()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<ListGroupRolesResponse>().await?;
-    Ok(body)
+    http::json::<ListGroupRolesResponse>(res).await
 }
 
 pub async fn list_group_memberships(
+    http: &HttpClient,
     params: &ListGroupMembershipsParams,
 ) -> Result<ListGroupMembershipsResponse, Error> {
-    let client = reqwest::Client::new();
-
     let url = format!(
         "https://apis.roblox.com/cloud/v2/groups/{groupId}/memberships",
-        groupId = &params.group_id,
+        groupId = params.group_id,
     );
 
     let mut query: QueryString = vec![];
@@ -229,20 +194,7 @@ pub async fn list_group_memberships(
         query.push(("filter", filter.clone()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<ListGroupMembershipsResponse>().await?;
-    Ok(body)
+    http::json::<ListGroupMembershipsResponse>(res).await
 }

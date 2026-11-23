@@ -10,14 +10,15 @@ OPTIONS:
     -a, --api-key <API_KEY>              Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
     -f, --filename <FILENAME>            Filename (full or relative) of the RBXL file
     -h, --help                           Print help information
-    -p, --place-id <PLACE_ID>            Place ID of the experience
+    -p, --pretty                         Pretty-print the JSON response
+    -i, --place-id <PLACE_ID>            Place ID of the experience
     -u, --universe-id <UNIVERSE_ID>      Universe ID of the experience
     -t, --version-type <VERSION_TYPE>    Version type [possible values: saved, published]
 ```
 
 ### Example
 ```
-$ rbxcloud experience publish -f myplace.rbxl -t published -p 12345 -u 98765 -a MY_KEY
+$ rbxcloud experience publish -f myplace.rbxl -t published -i 12345 -u 98765 -a MY_KEY
 ```
 
 ### GitHub Action
@@ -48,5 +49,5 @@ jobs:
           API_KEY: ${{ secrets.key }} # API Key (keep this in your GitHub Repository Secrets)
           FILE: my_place.rbxl         # Roblox place file (e.g. might have a step before this to build the file with Rojo)
 
-        run: rbxcloud experience publish -a "$API_KEY" -u "$UID" -p "$PID" -t published -f "$FILE"
+        run: rbxcloud experience publish -a "$API_KEY" -u "$UID" -i "$PID" -t published -f "$FILE"
 ```

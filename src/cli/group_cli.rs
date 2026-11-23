@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use rbxcloud::rbx::{types::GroupId, v2::Client};
+use rbxcloud::rbx::types::GroupId;
 
 #[derive(Debug, Subcommand)]
 pub enum GroupCommands {
@@ -102,7 +102,7 @@ impl Group {
                 api_key,
                 pretty,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let group = client.group(GroupId(group_id));
                 let res = group.get_info().await;
                 match res {
@@ -124,7 +124,7 @@ impl Group {
                 only_message,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let group = client.group(GroupId(group_id));
                 let res = group.get_shout().await;
                 match res {
@@ -150,7 +150,7 @@ impl Group {
                 max_page_size,
                 next_page_token,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let group = client.group(GroupId(group_id));
                 let res = group.list_roles(max_page_size, next_page_token).await;
                 match res {
@@ -174,7 +174,7 @@ impl Group {
                 next_page_token,
                 filter,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let group = client.group(GroupId(group_id));
                 let res = group
                     .list_memberships(max_page_size, filter, next_page_token)

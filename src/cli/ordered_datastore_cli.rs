@@ -1,201 +1,147 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::UniverseId,
-    v1::{
-        OrderedDataStoreCreateEntry, OrderedDataStoreEntry, OrderedDataStoreIncrementEntry,
-        OrderedDataStoreListEntries, OrderedDataStoreUpdateEntry, RbxCloud,
-    },
+    v2::{ordered_data_store::OrderedDataStoreSortOrder, PageOptions},
 };
 
+use super::to_json;
+
+#[derive(Debug, Args)]
+struct Common {
+    /// Universe ID of the experience
+    #[clap(short, long, value_parser)]
+    universe_id: u64,
+
+    /// Pretty-print the JSON response
+    #[clap(short, long, value_parser, default_value_t = false)]
+    pretty: bool,
+
+    /// Roblox Open Cloud API Key
+    #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
+    api_key: String,
+}
+
+#[derive(Debug, Args)]
+struct Target {
+    /// OrderedDataStore name
+    #[clap(short, long, value_parser)]
+    datastore_name: String,
+
+    /// DataStore scope (defaults to "global")
+    #[clap(short, long, value_parser)]
+    scope: Option<String>,
+}
+
 #[derive(Debug, Subcommand)]
-pub enum OrderedDataStoreCommands {
+enum OrderedDataStoreCommands {
     /// List entries
     List {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// Maximum number of items to return per page
         #[clap(short, long, value_parser)]
-        max_page_size: Option<u64>,
+        max_page_size: Option<u32>,
 
-        /// Cursor for the next set of data
+        /// Page token from a previous response's `nextPageToken`
         #[clap(short = 't', long, value_parser)]
         page_token: Option<String>,
 
-        /// The enumeration direction (Use 'desc' for descending)
-        #[clap(short, long, value_parser)]
-        order_by: Option<String>,
+        /// Sort by value in this direction
+        #[clap(short, long, value_enum)]
+        order_by: Option<OrderedDataStoreSortOrder>,
 
-        /// A range of qualifying values of entries to return
+        /// Range of values to return, e.g. "entry >= 10 && entry <= 50"
         #[clap(short, long, value_parser)]
         filter: Option<String>,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Pretty-print the JSON response
-        #[clap(short, long, value_parser, default_value_t = false)]
-        pretty: bool,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 
-    /// Create or overwrite an entry
+    /// Create an entry (fails if it already exists)
     Create {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// The ID of the entry
         #[clap(short, long, value_parser)]
         id: String,
 
         /// The value of the entry
-        #[clap(short, long, value_parser)]
+        #[clap(short, long, value_parser, allow_hyphen_values = true)]
         value: i64,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Pretty-print the JSON response
-        #[clap(short, long, value_parser, default_value_t = false)]
-        pretty: bool,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 
     /// Get an entry
     Get {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// The ID of the entry
         #[clap(short, long, value_parser)]
         id: String,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Pretty-print the JSON response
-        #[clap(short, long, value_parser, default_value_t = false)]
-        pretty: bool,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 
     /// Delete an entry
     Delete {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// The ID of the entry
         #[clap(short, long, value_parser)]
         id: String,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 
-    /// Update an entry
+    /// Update an entry's value
     Update {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// The ID of the entry
         #[clap(short, long, value_parser)]
         id: String,
 
-        /// The value of the entry
-        #[clap(short, long, value_parser)]
+        /// The new value of the entry
+        #[clap(short, long, value_parser, allow_hyphen_values = true)]
         value: i64,
 
-        /// Create if missing
+        /// Create the entry if it does not exist
         #[clap(short = 'm', long, value_parser)]
         allow_missing: Option<bool>,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Pretty-print the JSON response
-        #[clap(short, long, value_parser, default_value_t = false)]
-        pretty: bool,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 
-    /// Increment an entry
+    /// Increment an entry's value (creating it if needed)
     Increment {
-        /// DataStore name
-        #[clap(short, long, value_parser)]
-        datastore_name: String,
-
-        /// DataStore scope
-        #[clap(short, long, value_parser)]
-        scope: Option<String>,
+        #[clap(flatten)]
+        target: Target,
 
         /// The ID of the entry
         #[clap(short, long, value_parser)]
         id: String,
 
-        /// The incremented value of the entry
-        #[clap(short = 'n', long, value_parser)]
+        /// The amount by which the entry should be incremented
+        #[clap(short = 'n', long, value_parser, allow_hyphen_values = true)]
         increment: i64,
 
-        /// Universe ID of the experience
-        #[clap(short, long, value_parser)]
-        universe_id: u64,
-
-        /// Pretty-print the JSON response
-        #[clap(short, long, value_parser, default_value_t = false)]
-        pretty: bool,
-
-        /// Roblox Open Cloud API Key
-        #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
-        api_key: String,
+        #[clap(flatten)]
+        common: Common,
     },
 }
 
+/// Access the Roblox OrderedDataStore API (Open Cloud v2)
 #[derive(Debug, Args)]
 pub struct OrderedDataStore {
     #[clap(subcommand)]
@@ -206,189 +152,101 @@ impl OrderedDataStore {
     pub async fn run(self) -> anyhow::Result<Option<String>> {
         match self.command {
             OrderedDataStoreCommands::List {
-                datastore_name,
-                scope,
+                target,
                 max_page_size,
                 page_token,
                 order_by,
                 filter,
-                universe_id,
-                pretty,
-                api_key,
+                common,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .list_entries(&OrderedDataStoreListEntries {
-                        name: datastore_name,
-                        scope,
-                        max_page_size: max_page_size.map(|p| p.into()),
-                        page_token,
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .list_entries(
+                        &target.datastore_name,
+                        target.scope.as_deref(),
                         order_by,
-                        filter,
-                    })
-                    .await;
-                match res {
-                    Ok(data) => {
-                        let r = if pretty {
-                            serde_json::to_string_pretty(&data)?
-                        } else {
-                            serde_json::to_string(&data)?
-                        };
-                        Ok(Some(r))
-                    }
-                    Err(err) => Err(err.into()),
-                }
+                        PageOptions {
+                            max_page_size,
+                            page_token,
+                            filter,
+                            show_deleted: None,
+                        },
+                    )
+                    .await?;
+                to_json(&res, common.pretty)
             }
 
             OrderedDataStoreCommands::Create {
-                datastore_name,
-                scope,
+                target,
                 id,
                 value,
-                universe_id,
-                pretty,
-                api_key,
+                common,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .create_entry(&OrderedDataStoreCreateEntry {
-                        name: datastore_name,
-                        scope,
-                        id,
-                        value,
-                    })
-                    .await;
-                match res {
-                    Ok(data) => {
-                        let r = if pretty {
-                            serde_json::to_string_pretty(&data)?
-                        } else {
-                            serde_json::to_string(&data)?
-                        };
-                        Ok(Some(r))
-                    }
-                    Err(err) => Err(err.into()),
-                }
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .create_entry(&target.datastore_name, target.scope.as_deref(), &id, value)
+                    .await?;
+                to_json(&res, common.pretty)
             }
 
-            OrderedDataStoreCommands::Get {
-                datastore_name,
-                scope,
-                id,
-                universe_id,
-                pretty,
-                api_key,
-            } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .get_entry(&OrderedDataStoreEntry {
-                        name: datastore_name,
-                        scope,
-                        id,
-                    })
-                    .await;
-                match res {
-                    Ok(data) => {
-                        let r = if pretty {
-                            serde_json::to_string_pretty(&data)?
-                        } else {
-                            serde_json::to_string(&data)?
-                        };
-                        Ok(Some(r))
-                    }
-                    Err(err) => Err(err.into()),
-                }
+            OrderedDataStoreCommands::Get { target, id, common } => {
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .get_entry(&target.datastore_name, target.scope.as_deref(), &id)
+                    .await?;
+                to_json(&res, common.pretty)
             }
 
-            OrderedDataStoreCommands::Delete {
-                datastore_name,
-                scope,
-                id,
-                universe_id,
-                api_key,
-            } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .delete_entry(&OrderedDataStoreEntry {
-                        name: datastore_name,
-                        scope,
-                        id,
-                    })
-                    .await;
-                match res {
-                    Ok(_) => Ok(None),
-                    Err(err) => Err(err.into()),
-                }
+            OrderedDataStoreCommands::Delete { target, id, common } => {
+                let client = super::v2_client(&common.api_key)?;
+                client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .delete_entry(&target.datastore_name, target.scope.as_deref(), &id)
+                    .await?;
+                Ok(None)
             }
 
             OrderedDataStoreCommands::Update {
-                datastore_name,
-                scope,
+                target,
                 id,
                 value,
                 allow_missing,
-                universe_id,
-                pretty,
-                api_key,
+                common,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .update_entry(&OrderedDataStoreUpdateEntry {
-                        name: datastore_name,
-                        scope,
-                        id,
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .update_entry(
+                        &target.datastore_name,
+                        target.scope.as_deref(),
+                        &id,
                         value,
                         allow_missing,
-                    })
-                    .await;
-                match res {
-                    Ok(data) => {
-                        let r = if pretty {
-                            serde_json::to_string_pretty(&data)?
-                        } else {
-                            serde_json::to_string(&data)?
-                        };
-                        Ok(Some(r))
-                    }
-                    Err(err) => Err(err.into()),
-                }
+                    )
+                    .await?;
+                to_json(&res, common.pretty)
             }
 
             OrderedDataStoreCommands::Increment {
-                datastore_name,
-                scope,
+                target,
                 id,
                 increment,
-                universe_id,
-                pretty,
-                api_key,
+                common,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
-                let ordered_datastore = rbx_cloud.ordered_datastore(UniverseId(universe_id));
-                let res = ordered_datastore
-                    .increment_entry(&OrderedDataStoreIncrementEntry {
-                        name: datastore_name,
-                        scope,
-                        id,
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .ordered_data_store(UniverseId(common.universe_id))
+                    .increment_entry(
+                        &target.datastore_name,
+                        target.scope.as_deref(),
+                        &id,
                         increment,
-                    })
-                    .await;
-                match res {
-                    Ok(data) => {
-                        let r = if pretty {
-                            serde_json::to_string_pretty(&data)?
-                        } else {
-                            serde_json::to_string(&data)?
-                        };
-                        Ok(Some(r))
-                    }
-                    Err(err) => Err(err.into()),
-                }
+                    )
+                    .await?;
+                to_json(&res, common.pretty)
             }
         }
     }

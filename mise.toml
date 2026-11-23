@@ -1,0 +1,89 @@
+# Tooling for working on rbxcloud. Run `mise install` once, then `mise tasks`
+# to see the available commands (e.g. `mise run ci`).
+
+[tools]
+# Matches CI, which builds with the latest stable toolchain.
+rust = { version = "stable", components = "clippy,rustfmt" }
+# Runs the Python helper scripts and the mkdocs docs site without a global Python setup.
+uv = "latest"
+
+[env]
+# Let `uv run` pick a managed Python for the helper scripts.
+UV_PYTHON_PREFERENCE = "managed"
+
+# ---------------------------------------------------------------- build
+
+[tasks.build]
+description = "Build the CLI and library (debug)"
+run = "cargo build"
+
+[tasks."build:release"]
+description = "Build an optimized release binary (target/release)"
+run = "cargo build --release --locked"
+
+[tasks.install]
+description = "Install the rbxcloud CLI from this checkout into ~/.cargo/bin"
+run = "cargo install --path . --locked"
+
+[tasks.cli]
+description = "Run the CLI from source, e.g. `mise run cli -- universe get -u 123`"
+run = "cargo run --quiet --"
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "cargo clean"
+
+# ---------------------------------------------------------------- quality
+
+[tasks.fmt]
+description = "Format all Rust code"
+run = "cargo fmt --all"
+
+[tasks.lint]
+description = "Check formatting and run clippy (same as CI)"
+run = [
+    "cargo fmt --all -- --check",
+    "cargo clippy --all-features --all-targets",
+]
+
+[tasks.fix]
+description = "Auto-fix formatting and clippy suggestions"
+run = [
+    "cargo clippy --fix --allow-dirty --allow-staged --all-features --all-targets",
+    "cargo fmt --all",
+]
+
+[tasks.test]
+description = "Run unit tests and doctests"
+run = "cargo test --all-features"
+
+[tasks.ci]
+description = "Run every check CI runs: check, fmt, clippy, tests"
+depends = ["lint", "test"]
+run = "cargo check"
+
+# ---------------------------------------------------------------- docs
+
+[tasks."docs:cli"]
+description = "Regenerate the datastore, ordered-datastore, and memory-store CLI docs from --help"
+depends = ["build"]
+run = "uv run --no-project scripts/gen_cli_docs.py"
+
+[tasks."docs:serve"]
+description = "Preview the documentation site at http://127.0.0.1:8000"
+run = "uvx --with mkdocs-material mkdocs serve"
+
+[tasks."docs:build"]
+description = "Build the documentation site into ./site"
+run = "uvx --with mkdocs-material mkdocs build"
+
+[tasks."docs:rust"]
+description = "Build and open the Rust API documentation"
+run = "cargo doc --no-deps --open"
+
+# ---------------------------------------------------------------- release
+
+[tasks."release:check"]
+description = "Pre-release checks: CI suite, release build, and Cargo.toml version vs latest tag"
+depends = ["ci", "build:release"]
+run = "uv run --no-project scripts/release_check.py"

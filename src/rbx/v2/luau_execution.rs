@@ -7,11 +7,10 @@ use crate::rbx::{
     util::QueryString,
 };
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 #[derive(Debug)]
 pub struct CreateLuauExecutionTaskParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: PlaceId,
     pub version_id: Option<String>,
@@ -19,19 +18,13 @@ pub struct CreateLuauExecutionTaskParams {
     pub timeout: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct NewLuauExecutionSessionTask {
-    pub path: String,
-    pub user: String,
-    pub state: LuauExecutionState,
-    pub script: String,
-}
+/// The task returned when creating a Luau execution task. It has the same
+/// shape as a task fetched later with `get_luau_execution_task`.
+pub type NewLuauExecutionSessionTask = LuauExecutionSessionTask;
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetLuauExecutionSessionTaskParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: PlaceId,
     pub version_id: Option<String>,
@@ -42,7 +35,6 @@ pub struct GetLuauExecutionSessionTaskParams {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetLuauExecutionSessionTaskLogsParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: PlaceId,
     pub version_id: Option<String>,
@@ -76,15 +68,19 @@ impl std::fmt::Display for LuauExecutionTaskLogView {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LuauExecutionSessionTaskLogPage {
+    #[serde(default)]
     pub luau_execution_session_task_logs: Vec<LuauExecutionSessionTaskLog>,
-    pub next_page_token: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LuauExecutionSessionTaskLog {
     pub path: String,
+    #[serde(default)]
     pub messages: Vec<String>,
+    #[serde(default)]
     pub structured_messages: Vec<StructuredMessage>,
 }
 
@@ -96,24 +92,107 @@ pub struct StructuredMessage {
     pub message_type: String,
 }
 
+/// A Luau execution session task.
+///
+/// Exactly one of `output` (when `state` is `Complete`) or `error` (when
+/// `state` is `Failed`) is populated once the task finishes. Use
+/// [`LuauExecutionSessionTask::outcome`] to match on the result.
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LuauExecutionSessionTask {
     pub path: String,
-    pub create_time: String,
-    pub update_time: String,
-    pub user: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub create_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub update_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
     pub state: LuauExecutionState,
-    pub output: LuauExecutionOutput,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub script: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<LuauExecutionError>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<LuauExecutionOutput>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub binary_input: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enable_binary_output: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub binary_output_uri: Option<String>,
+}
+
+/// The result of a Luau execution task, derived from its state.
+#[derive(Debug)]
+pub enum LuauExecutionOutcome<'a> {
+    /// The task is queued or still processing.
+    Pending,
+    /// The task finished; contains the values returned by the script.
+    Complete(&'a [Value]),
+    /// The task failed; contains the error reported by Roblox.
+    Failed(&'a LuauExecutionError),
+    /// The task was cancelled.
+    Cancelled,
+}
+
+impl LuauExecutionSessionTask {
+    /// Get the outcome of the task.
+    pub fn outcome(&self) -> LuauExecutionOutcome<'_> {
+        match (&self.state, &self.output, &self.error) {
+            (LuauExecutionState::Cancelled, _, _) => LuauExecutionOutcome::Cancelled,
+            (_, _, Some(error)) => LuauExecutionOutcome::Failed(error),
+            (LuauExecutionState::Complete, Some(output), _) => {
+                LuauExecutionOutcome::Complete(&output.results)
+            }
+            (LuauExecutionState::Complete, None, _) => LuauExecutionOutcome::Complete(&[]),
+            _ => LuauExecutionOutcome::Pending,
+        }
+    }
+
+    /// Whether the task has finished (completed, failed, or cancelled).
+    pub fn is_done(&self) -> bool {
+        !matches!(self.outcome(), LuauExecutionOutcome::Pending)
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LuauExecutionOutput {
+    #[serde(default)]
     pub results: Vec<Value>,
 }
 
+/// Error reported by a failed Luau execution task.
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LuauExecutionError {
+    pub code: LuauExecutionErrorCode,
+    #[serde(default)]
+    pub message: String,
+}
+
+impl std::fmt::Display for LuauExecutionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}: {}", self.code, self.message)
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum LuauExecutionErrorCode {
+    ErrorCodeUnspecified,
+    ScriptError,
+    DeadlineExceeded,
+    OutputSizeLimitExceeded,
+    InternalError,
+    /// A code added by Roblox after this version of rbxcloud.
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LuauExecutionState {
     StateUnspecified,
@@ -122,6 +201,9 @@ pub enum LuauExecutionState {
     Cancelled,
     Complete,
     Failed,
+    /// A state added by Roblox after this version of rbxcloud.
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -133,22 +215,21 @@ struct LuauExecutionInput {
 }
 
 pub async fn create_luau_execution_task(
+    http: &HttpClient,
     params: &CreateLuauExecutionTaskParams,
 ) -> Result<NewLuauExecutionSessionTask, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(version_id) = &params.version_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/versions/{versionId}/luau-execution-session-tasks",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
 			versionId = version_id,
 		)
     } else {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/luau-execution-session-tasks",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
 		)
     };
 
@@ -159,87 +240,64 @@ pub async fn create_luau_execution_task(
 
     let req_body = serde_json::to_string(&input)?;
 
-    let res = client
+    let res = http
         .post(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .body(req_body)
         .send()
         .await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<NewLuauExecutionSessionTask>().await?;
-    Ok(body)
+    http::json::<NewLuauExecutionSessionTask>(res).await
 }
 
 pub async fn get_luau_execution_task(
+    http: &HttpClient,
     params: &GetLuauExecutionSessionTaskParams,
 ) -> Result<LuauExecutionSessionTask, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(version_id) = &params.version_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/versions/{versionId}/luau-execution-sessions/{sessionId}/tasks/{taskId}",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
 			versionId = version_id,
-			sessionId = &params.session_id,
-			taskId = &params.task_id,
+			sessionId = params.session_id,
+			taskId = params.task_id,
 		)
     } else {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/luau-execution-sessions/{sessionId}/tasks/{taskId}",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
-			sessionId = &params.session_id,
-			taskId = &params.task_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
+			sessionId = params.session_id,
+			taskId = params.task_id,
 		)
     };
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
+    let res = http.get(url).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<LuauExecutionSessionTask>().await?;
-    Ok(body)
+    http::json::<LuauExecutionSessionTask>(res).await
 }
 
 pub async fn get_luau_execution_task_logs(
+    http: &HttpClient,
     params: &GetLuauExecutionSessionTaskLogsParams,
 ) -> Result<LuauExecutionSessionTaskLogPage, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(version_id) = &params.version_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/versions/{versionId}/luau-execution-sessions/{sessionId}/tasks/{taskId}/logs",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
 			versionId = version_id,
-			sessionId = &params.session_id,
-			taskId = &params.task_id,
+			sessionId = params.session_id,
+			taskId = params.task_id,
 		)
     } else {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/luau-execution-sessions/{sessionId}/tasks/{taskId}/logs",
-			universeId = &params.universe_id,
-			placeId = &params.place_id,
-			sessionId = &params.session_id,
-			taskId = &params.task_id,
+			universeId = params.universe_id,
+			placeId = params.place_id,
+			sessionId = params.session_id,
+			taskId = params.task_id,
 		)
     };
 
@@ -251,20 +309,7 @@ pub async fn get_luau_execution_task_logs(
         query.push(("pageToken", page_token.clone()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<LuauExecutionSessionTaskLogPage>().await?;
-    Ok(body)
+    http::json::<LuauExecutionSessionTaskLogPage>(res).await
 }

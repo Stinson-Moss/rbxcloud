@@ -1,8 +1,5 @@
 use clap::{Args, Subcommand};
-use rbxcloud::rbx::{
-    types::UniverseId,
-    v2::{subscription::SubscriptionView, Client},
-};
+use rbxcloud::rbx::{types::UniverseId, v2::subscription::SubscriptionView};
 
 #[derive(Debug, Subcommand)]
 pub enum SubscriptionCommands {
@@ -51,7 +48,7 @@ impl Subscription {
                 pretty,
                 api_key,
             } => {
-                let client = Client::new(&api_key);
+                let client = super::v2_client(&api_key)?;
                 let subscription_client = client.subscription();
                 let res = subscription_client
                     .get(UniverseId(universe_id), product, subscription, view)

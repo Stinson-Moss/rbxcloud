@@ -2,10 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::rbx::{error::Error, types::RobloxUserId, util::QueryString};
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 pub struct GetUserParams {
-    pub api_key: String,
     pub user_id: RobloxUserId,
 }
 
@@ -20,26 +19,33 @@ pub enum UserSocialNetworkVisibility {
     Everyone,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
+#[serde(default)]
 pub struct UserSocialNetworkProfiles {
-    facebook: String,
-    twitter: String,
-    youtube: String,
-    twitch: String,
-    guilded: String,
-    visibility: String,
+    pub facebook: String,
+    pub twitter: String,
+    pub youtube: String,
+    pub twitch: String,
+    pub guilded: String,
+    pub visibility: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUserResponse {
     pub path: String,
+    #[serde(default)]
     pub create_time: String,
+    #[serde(default)]
     pub id: String,
+    #[serde(default)]
     pub name: String,
+    #[serde(default)]
     pub display_name: String,
+    #[serde(default)]
     pub about: String,
+    #[serde(default)]
     pub locale: String,
     pub premium: Option<bool>,
     pub id_verified: Option<bool>,
@@ -47,7 +53,6 @@ pub struct GetUserResponse {
 }
 
 pub struct GenerateUserThumbnailParams {
-    pub api_key: String,
     pub user_id: RobloxUserId,
     pub size: Option<UserThumbnailSize>,
     pub format: Option<UserThumbnailFormat>,
@@ -88,8 +93,10 @@ pub enum UserThumbnailShape {
 #[serde(rename_all = "camelCase")]
 pub struct GenerateUserThumbnailOperationResponse {
     pub path: String,
+    #[serde(default)]
     pub done: bool,
-    pub response: GenerateUserThumbnailResponse,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response: Option<GenerateUserThumbnailResponse>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -102,7 +109,7 @@ impl std::fmt::Display for UserThumbnailSize {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(
             f,
-            "{:?}",
+            "{}",
             match self {
                 Self::Size48x48 => "48",
                 Self::Size50x50 => "50",
@@ -124,7 +131,7 @@ impl std::fmt::Display for UserThumbnailFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(
             f,
-            "{:?}",
+            "{}",
             match self {
                 Self::Png => "PNG",
                 Self::Jpeg => "JPEG",
@@ -137,7 +144,7 @@ impl std::fmt::Display for UserThumbnailShape {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(
             f,
-            "{:?}",
+            "{}",
             match self {
                 Self::Round => "ROUND",
                 Self::Square => "SQUARE",
@@ -146,39 +153,24 @@ impl std::fmt::Display for UserThumbnailShape {
     }
 }
 
-pub async fn get_user(params: &GetUserParams) -> Result<GetUserResponse, Error> {
-    let client = reqwest::Client::new();
-
+pub async fn get_user(http: &HttpClient, params: &GetUserParams) -> Result<GetUserResponse, Error> {
     let url = format!(
         "https://apis.roblox.com/cloud/v2/users/{user}",
-        user = &params.user_id,
+        user = params.user_id,
     );
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
+    let res = http.get(url).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<GetUserResponse>().await?;
-    Ok(body)
+    http::json::<GetUserResponse>(res).await
 }
 
 pub async fn generate_thumbnail(
+    http: &HttpClient,
     params: &GenerateUserThumbnailParams,
 ) -> Result<GenerateUserThumbnailOperationResponse, Error> {
-    let client = reqwest::Client::new();
-
     let url = format!(
         "https://apis.roblox.com/cloud/v2/users/{user}:generateThumbnail",
-        user = &params.user_id,
+        user = params.user_id,
     );
 
     let mut query: QueryString = vec![];
@@ -192,20 +184,7 @@ pub async fn generate_thumbnail(
         query.push(("shape", shape.to_string()))
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<GenerateUserThumbnailOperationResponse>().await?;
-    Ok(body)
+    http::json::<GenerateUserThumbnailOperationResponse>(res).await
 }

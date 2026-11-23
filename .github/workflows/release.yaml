@@ -26,18 +26,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Build Linux on the oldest supported runner for wider glibc compatibility.
           - host: linux
-            os: ubuntu-latest
+            os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             label: linux
+
+          - host: linux
+            os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            label: linux-aarch64
 
           - host: windows
             os: windows-latest
             target: x86_64-pc-windows-msvc
             label: win64
 
+          # The macos-13 (Intel) runner has been retired; cross-compile the
+          # Intel build from Apple Silicon instead.
           - host: macos
-            os: macos-13
+            os: macos-latest
             target: x86_64-apple-darwin
             label: macos
 
@@ -59,13 +67,15 @@ jobs:
           echo "PROJECT_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Rust
-        run: rustup toolchain install stable-${{ matrix.target }} --profile minimal --no-self-update
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup target add ${{ matrix.target }}
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
       - name: Build Release
-        run: cargo build --release --locked --verbose
+        run: cargo build --release --locked --verbose --target ${{ matrix.target }}
         env:
           CARGO_TARGET_DIR: output
           OPENSSL_STATIC: 1
@@ -76,11 +86,11 @@ jobs:
           mkdir staging
 
           if [ "${{ matrix.host }}" = "windows" ]; then
-            cp "output/release/$BIN.exe" staging/
+            cp "output/${{ matrix.target }}/release/$BIN.exe" staging/
             cd staging
             7z a ../release.zip *
           else
-            cp "output/release/$BIN" staging/
+            cp "output/${{ matrix.target }}/release/$BIN" staging/
             cd staging
             zip ../release.zip *
           fi
@@ -120,23 +130,8 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          # Published immediately so `mise use github:Stinson-Moss/rbxcloud` can find it.
+          draft: false
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: gh_artifacts/*.zip
-
-  publish:
-    needs: ["create-release"]
-    name: Publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Rust
-        run: rustup toolchain install stable --profile minimal --no-self-update
-
-      - name: Publish
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        shell: bash
-        run: cargo publish

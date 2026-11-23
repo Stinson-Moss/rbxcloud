@@ -7,7 +7,7 @@ use crate::rbx::{
     util::QueryString,
 };
 
-use super::http_err::handle_http_err;
+use crate::rbx::http::{self, HttpClient};
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +34,6 @@ pub struct UserRestriction {
 }
 
 pub struct UpdateUserRestrictionParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: Option<PlaceId>,
     pub user_id: RobloxUserId,
@@ -95,14 +94,12 @@ pub struct UserRestrictionLogsList {
 }
 
 pub struct GetUserRestrictionParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: Option<PlaceId>,
     pub user_id: RobloxUserId,
 }
 
 pub struct ListUserRestrictionsParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: Option<PlaceId>,
     pub max_page_size: Option<u32>,
@@ -111,7 +108,6 @@ pub struct ListUserRestrictionsParams {
 }
 
 pub struct ListUserRestrictionLogsParams {
-    pub api_key: String,
     pub universe_id: UniverseId,
     pub place_id: Option<PlaceId>,
     pub max_page_size: Option<u32>,
@@ -120,57 +116,43 @@ pub struct ListUserRestrictionLogsParams {
 }
 
 pub async fn get_user_restriction(
+    http: &HttpClient,
     params: &GetUserRestrictionParams,
 ) -> Result<UserRestriction, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(place_id) = params.place_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/user-restrictions/{user}",
-			universeId = &params.universe_id,
-			placeId = &place_id,
-			user = &params.user_id,
+			universeId = params.universe_id,
+			placeId = place_id,
+			user = params.user_id,
 		)
     } else {
         format!(
             "https://apis.roblox.com/cloud/v2/universes/{universeId}/user-restrictions/{user}",
-            universeId = &params.universe_id,
-            user = &params.user_id,
+            universeId = params.universe_id,
+            user = params.user_id,
         )
     };
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .send()
-        .await?;
+    let res = http.get(url).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<UserRestriction>().await?;
-    Ok(body)
+    http::json::<UserRestriction>(res).await
 }
 
 pub async fn list_user_restrictions(
+    http: &HttpClient,
     params: &ListUserRestrictionsParams,
 ) -> Result<UserRestrictionList, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(place_id) = params.place_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/user-restrictions",
-			universeId = &params.universe_id,
-			placeId = &place_id,
+			universeId = params.universe_id,
+			placeId = place_id,
 		)
     } else {
         format!(
             "https://apis.roblox.com/cloud/v2/universes/{universeId}/user-restrictions",
-            universeId = &params.universe_id,
+            universeId = params.universe_id,
         )
     };
 
@@ -185,41 +167,27 @@ pub async fn list_user_restrictions(
         query.push(("filter", filter.to_string()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<UserRestrictionList>().await?;
-    Ok(body)
+    http::json::<UserRestrictionList>(res).await
 }
 
 pub async fn update_user_restriction(
+    http: &HttpClient,
     params: &UpdateUserRestrictionParams,
 ) -> Result<UserRestriction, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(place_id) = params.place_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/user-restrictions/{user}",
-			universeId = &params.universe_id,
-			placeId = &place_id,
-			user = &params.user_id,
+			universeId = params.universe_id,
+			placeId = place_id,
+			user = params.user_id,
 		)
     } else {
         format!(
             "https://apis.roblox.com/cloud/v2/universes/{universeId}/user-restrictions/{user}",
-            universeId = &params.universe_id,
-            user = &params.user_id,
+            universeId = params.universe_id,
+            user = params.user_id,
         )
     };
 
@@ -247,41 +215,31 @@ pub async fn update_user_restriction(
         },
     })?;
 
-    let res = client
+    let res = http
         .patch(url)
-        .header("x-api-key", &params.api_key)
         .header("Content-Type", "application/json")
         .query(&query)
         .body(body)
         .send()
         .await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<UserRestriction>().await?;
-    Ok(body)
+    http::json::<UserRestriction>(res).await
 }
 
 pub async fn list_user_restriction_logs(
+    http: &HttpClient,
     params: &ListUserRestrictionLogsParams,
 ) -> Result<UserRestrictionLogsList, Error> {
-    let client = reqwest::Client::new();
-
     let url = if let Some(place_id) = params.place_id {
         format!(
 			"https://apis.roblox.com/cloud/v2/universes/{universeId}/places/{placeId}/user-restrictions:listLogs",
-			universeId = &params.universe_id,
-			placeId = &place_id,
+			universeId = params.universe_id,
+			placeId = place_id,
 		)
     } else {
         format!(
             "https://apis.roblox.com/cloud/v2/universes/{universeId}/user-restrictions:listLogs",
-            universeId = &params.universe_id,
+            universeId = params.universe_id,
         )
     };
 
@@ -296,20 +254,7 @@ pub async fn list_user_restriction_logs(
         query.push(("filter", filter.to_string()));
     }
 
-    let res = client
-        .get(url)
-        .header("x-api-key", &params.api_key)
-        .query(&query)
-        .send()
-        .await?;
+    let res = http.get(url).query(&query).send().await?;
 
-    let status = res.status();
-
-    if !status.is_success() {
-        let code = status.as_u16();
-        return handle_http_err(code);
-    }
-
-    let body = res.json::<UserRestrictionLogsList>().await?;
-    Ok(body)
+    http::json::<UserRestrictionLogsList>(res).await
 }

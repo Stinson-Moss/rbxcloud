@@ -9,7 +9,7 @@ use rbxcloud::rbx::{
             AssetCreation, AssetCreationContext, AssetCreator, AssetGroupCreator, AssetType,
             AssetUserCreator,
         },
-        ArchiveAsset, CreateAsset, GetAsset, GetAssetOperation, RbxCloud, UpdateAsset,
+        ArchiveAsset, CreateAsset, GetAsset, GetAssetOperation, UpdateAsset,
     },
 };
 
@@ -202,7 +202,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let creation_context =
                     create_context_from_creator_type(creator_type, creator_id, expected_price);
@@ -241,7 +241,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let asset_type = match asset_type {
                     Some(t) => Ok(t),
@@ -272,7 +272,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let res = assets
                     .get_operation(&GetAssetOperation { operation_id })
@@ -296,7 +296,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let res = assets
                     .get(&GetAsset {
@@ -322,7 +322,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let res = assets.archive(&ArchiveAsset { asset_id }).await;
                 match res {
@@ -343,7 +343,7 @@ impl Assets {
                 pretty,
                 api_key,
             } => {
-                let rbx_cloud = RbxCloud::new(&api_key);
+                let rbx_cloud = super::v1_client(&api_key)?;
                 let assets = rbx_cloud.assets();
                 let res = assets.restore(&ArchiveAsset { asset_id }).await;
                 match res {
