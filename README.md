@@ -16,7 +16,7 @@ Possible use-cases:
 
 | | API v1 |
 | -- | -- |
-| :white_check_mark: | Assets |
+| :white_check_mark: | Assets (incl. versions, rollback, permissions) |
 | :white_check_mark: | Data Stores <small>(superseded by v2)</small> |
 | :white_check_mark: | Ordered Data Stores <small>(superseded by v2)</small> |
 | :white_check_mark: | Messaging |
@@ -27,20 +27,23 @@ Possible use-cases:
 | :white_check_mark: | Data Stores |
 | :white_check_mark: | Ordered Data Stores |
 | :white_check_mark: | Memory Stores |
-| :white_check_mark: | Groups |
+| :white_check_mark: | Groups (incl. join requests, roles, forums) |
 | :white_check_mark: | Universes (incl. publish message) |
 | :white_check_mark: | Places |
-| :x: | Instances |
+| :white_check_mark: | Instances |
 | :white_check_mark: | Subscriptions |
 | :white_check_mark: | Inventory |
 | :white_check_mark: | User Notifications |
 | :white_check_mark: | User |
 | :white_check_mark: | User Restrictions |
-| :x: | Creator Store |
-| :white_check_mark: | Luau Execution |
+| :white_check_mark: | Creator Store |
+| :white_check_mark: | Luau Execution (incl. binary input/output) |
+| :white_check_mark: | Secrets Store |
+| :white_check_mark: | Game Passes |
+| :white_check_mark: | Developer Products |
+| :white_check_mark: | Asset Quotas |
 
 - :white_check_mark: = Supported
-- :x: = Not yet supported
 
 The goal of this project is to support all API endpoints that Roblox provides.
 

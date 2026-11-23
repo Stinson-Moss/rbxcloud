@@ -10,10 +10,6 @@ Usage: rbxcloud ordered-datastore list [OPTIONS] --datastore-name <DATASTORE_NAM
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -m, --max-page-size <MAX_PAGE_SIZE>
@@ -30,6 +26,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -47,10 +47,6 @@ Usage: rbxcloud ordered-datastore create [OPTIONS] --datastore-name <DATASTORE_N
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -i, --id <ID>
@@ -63,6 +59,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -80,10 +80,6 @@ Usage: rbxcloud ordered-datastore get [OPTIONS] --datastore-name <DATASTORE_NAME
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -i, --id <ID>
@@ -94,6 +90,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -111,10 +111,6 @@ Usage: rbxcloud ordered-datastore update [OPTIONS] --datastore-name <DATASTORE_N
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -i, --id <ID>
@@ -129,6 +125,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -146,10 +146,6 @@ Usage: rbxcloud ordered-datastore increment [OPTIONS] --datastore-name <DATASTOR
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -i, --id <ID>
@@ -162,6 +158,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -179,10 +179,6 @@ Usage: rbxcloud ordered-datastore delete [OPTIONS] --datastore-name <DATASTORE_N
 Options:
   -d, --datastore-name <DATASTORE_NAME>
           OrderedDataStore name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -s, --scope <SCOPE>
           DataStore scope (defaults to "global")
   -i, --id <ID>
@@ -193,6 +189,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```

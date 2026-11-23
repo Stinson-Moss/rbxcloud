@@ -10,9 +10,13 @@ nav:
     - Install: cli/cli-install.md
     - API Key: cli/cli-api-key.md
     - Assets: cli/cli-assets.md
+    - Creator Store: cli/cli-creator-store.md
     - DataStore: cli/cli-datastore.md
+    - Developer Product: cli/cli-developer-product.md
     - Experience: cli/cli-experience.md
+    - Game Pass: cli/cli-game-pass.md
     - Group: cli/cli-group.md
+    - Instance: cli/cli-instance.md
     - Inventory: cli/cli-inventory.md
     - Luau Execution: cli/cli-luau-execution.md
     - MemoryStore: cli/cli-memory-store.md
@@ -20,6 +24,7 @@ nav:
     - Notification: cli/cli-notification.md
     - OrderedDataStore: cli/cli-ordered-datastore.md
     - Place: cli/cli-place.md
+    - Secrets: cli/cli-secret.md
     - Subscription: cli/cli-subscription.md
     - Universe: cli/cli-universe.md
     - User: cli/cli-user.md

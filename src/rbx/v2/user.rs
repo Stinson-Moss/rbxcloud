@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::rbx::{error::Error, types::RobloxUserId, util::QueryString};
+use crate::rbx::{
+    error::Error,
+    types::RobloxUserId,
+    util::{de_lenient_i64, QueryString},
+};
 
 use crate::rbx::http::{self, HttpClient};
 
@@ -187,4 +191,96 @@ pub async fn generate_thumbnail(
     let res = http.get(url).query(&query).send().await?;
 
     http::json::<GenerateUserThumbnailOperationResponse>(res).await
+}
+
+// ------------------------------------------------------------ asset quotas
+
+/// An asset upload or distribution quota for a user.
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetQuota {
+    pub path: String,
+    /// e.g. `RATE_LIMIT_UPLOAD`
+    #[serde(default)]
+    pub quota_type: String,
+    /// e.g. `AUDIO`
+    #[serde(default)]
+    pub asset_type: String,
+    #[serde(default, deserialize_with = "de_lenient_i64")]
+    pub usage: i64,
+    #[serde(default, deserialize_with = "de_lenient_i64")]
+    pub capacity: i64,
+    /// `MONTH` or `DAY`
+    #[serde(default)]
+    pub period: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage_reset_time: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ListAssetQuotasResponse {
+    #[serde(default)]
+    pub asset_quotas: Vec<AssetQuota>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
+}
+
+/// List a user's asset quotas (e.g. monthly audio upload limits).
+///
+/// Filter example: `quotaType == RATE_LIMIT_UPLOAD && assetType == Audio`.
+pub async fn list_asset_quotas(
+    http: &HttpClient,
+    user_id: RobloxUserId,
+    filter: Option<String>,
+    max_page_size: Option<u32>,
+    page_token: Option<String>,
+) -> Result<ListAssetQuotasResponse, Error> {
+    let mut query: QueryString = vec![];
+    if let Some(filter) = filter {
+        query.push(("filter", filter));
+    }
+    if let Some(n) = max_page_size {
+        query.push(("maxPageSize", n.to_string()));
+    }
+    if let Some(token) = page_token {
+        query.push(("pageToken", token));
+    }
+    let res = http
+        .get(http::url(&format!(
+            "/cloud/v2/users/{user_id}/asset-quotas"
+        )))
+        .query(&query)
+        .send()
+        .await?;
+    http::json(res).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn thumbnail_query_values_are_unquoted() {
+        assert_eq!(UserThumbnailSize::Size48x48.to_string(), "48");
+        assert_eq!(UserThumbnailFormat::Png.to_string(), "PNG");
+        assert_eq!(UserThumbnailShape::Round.to_string(), "ROUND");
+    }
+
+    #[test]
+    fn decode_asset_quotas() {
+        let res: ListAssetQuotasResponse = serde_json::from_value(serde_json::json!({
+            "assetQuotas": [{
+                "path": "users/1/asset-quotas/abc",
+                "quotaType": "RATE_LIMIT_UPLOAD",
+                "assetType": "AUDIO",
+                "usage": "3",
+                "capacity": "100",
+                "period": "MONTH"
+            }]
+        }))
+        .unwrap();
+        let quota = &res.asset_quotas[0];
+        assert_eq!((quota.usage, quota.capacity), (3, 100));
+    }
 }

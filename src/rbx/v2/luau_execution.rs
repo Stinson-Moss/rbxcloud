@@ -16,6 +16,11 @@ pub struct CreateLuauExecutionTaskParams {
     pub version_id: Option<String>,
     pub script: String,
     pub timeout: Option<String>,
+    /// Path of an uploaded binary input (see [`upload_binary_input`]). The
+    /// script receives it as `({...})[1].BinaryInput`.
+    pub binary_input: Option<String>,
+    /// Allow the script to return a large `BinaryOutput` buffer.
+    pub enable_binary_output: bool,
 }
 
 /// The task returned when creating a Luau execution task. It has the same
@@ -212,6 +217,10 @@ struct LuauExecutionInput {
     pub script: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub binary_input: Option<String>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub enable_binary_output: bool,
 }
 
 pub async fn create_luau_execution_task(
@@ -236,6 +245,8 @@ pub async fn create_luau_execution_task(
     let input = LuauExecutionInput {
         script: params.script.clone(),
         timeout: params.timeout.clone(),
+        binary_input: params.binary_input.clone(),
+        enable_binary_output: params.enable_binary_output,
     };
 
     let req_body = serde_json::to_string(&input)?;
@@ -312,4 +323,170 @@ pub async fn get_luau_execution_task_logs(
     let res = http.get(url).query(&query).send().await?;
 
     http::json::<LuauExecutionSessionTaskLogPage>(res).await
+}
+
+/// Fetch a task by the `path` Roblox returned for it. Works whether or not
+/// the task was created against a specific place version.
+pub async fn get_luau_execution_task_by_path(
+    http: &HttpClient,
+    path: &str,
+) -> Result<LuauExecutionSessionTask, Error> {
+    let path = path.trim_start_matches('/');
+    let res = http
+        .get(http::url(&format!("/cloud/v2/{path}")))
+        .send()
+        .await?;
+    http::json(res).await
+}
+
+/// Poll a task until it completes, fails, or is cancelled.
+pub async fn wait_for_luau_execution_task(
+    http: &HttpClient,
+    task: LuauExecutionSessionTask,
+    poll: super::operation::PollOptions,
+) -> Result<LuauExecutionSessionTask, Error> {
+    let mut task = task;
+    let mut attempts = 0;
+    while !task.is_done() {
+        if attempts >= poll.max_attempts {
+            return Err(Error::OperationError {
+                code: 0,
+                msg: format!(
+                    "timed out waiting for Luau task {} after {attempts} polls",
+                    task.path
+                ),
+            });
+        }
+        tokio::time::sleep(poll.interval).await;
+        task = get_luau_execution_task_by_path(http, &task.path).await?;
+        attempts += 1;
+    }
+    Ok(task)
+}
+
+// ------------------------------------------------------------ binary input
+
+/// Largest binary input Roblox accepts (100 MiB).
+pub const MAX_BINARY_INPUT_BYTES: usize = 100 * 1024 * 1024;
+
+/// A binary input slot. Valid for 15 minutes after creation, and reusable
+/// across tasks in the same universe during that time.
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LuauExecutionSessionTaskBinaryInput {
+    pub path: String,
+    #[serde(default)]
+    pub size: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upload_uri: Option<String>,
+}
+
+/// Create a binary input slot of `size` bytes.
+pub async fn create_binary_input(
+    http: &HttpClient,
+    universe_id: UniverseId,
+    size: u64,
+) -> Result<LuauExecutionSessionTaskBinaryInput, Error> {
+    let url = http::url(&format!(
+        "/cloud/v2/universes/{universe_id}/luau-execution-session-task-binary-inputs"
+    ));
+    let res = http
+        .post(url)
+        .json(&serde_json::json!({ "size": size }))
+        .send()
+        .await?;
+    http::json(res).await
+}
+
+/// Create a binary input and upload `data` to it, returning the input whose
+/// `path` can be passed as `binary_input` when creating a task.
+pub async fn upload_binary_input(
+    http: &HttpClient,
+    universe_id: UniverseId,
+    data: Vec<u8>,
+) -> Result<LuauExecutionSessionTaskBinaryInput, Error> {
+    if data.len() > MAX_BINARY_INPUT_BYTES {
+        return Err(Error::EndpointError(format!(
+            "binary input is {} bytes; Roblox accepts at most {MAX_BINARY_INPUT_BYTES}",
+            data.len()
+        )));
+    }
+    let input = create_binary_input(http, universe_id, data.len() as u64).await?;
+    let upload_uri = input.upload_uri.clone().ok_or_else(|| {
+        Error::EndpointError("binary input response has no uploadUri".to_string())
+    })?;
+    // The upload URI is pre-signed: send it without the API key.
+    let res = http
+        .reqwest_client()
+        .put(upload_uri)
+        .body(data)
+        .send()
+        .await?;
+    http::empty(res).await?;
+    Ok(input)
+}
+
+/// Download a task's binary output from its `binary_output_uri`.
+pub async fn download_binary_output(http: &HttpClient, uri: &str) -> Result<Vec<u8>, Error> {
+    // Pre-signed URI: no API key.
+    let res = http.reqwest_client().get(uri).send().await?;
+    let res = http::check(res).await?;
+    Ok(res.bytes().await?.to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn decode_failed_task() {
+        // Issue #78: failed tasks have `error` and no `output`.
+        let task: LuauExecutionSessionTask = serde_json::from_value(json!({
+            "path": "universes/1/places/2/luau-execution-sessions/s/tasks/t",
+            "createTime": "2024-01-01T00:00:00Z",
+            "updateTime": "2024-01-01T00:00:01Z",
+            "user": "users/1",
+            "state": "FAILED",
+            "script": "error('boom')",
+            "error": {"code": "SCRIPT_ERROR", "message": "boom"}
+        }))
+        .unwrap();
+        match task.outcome() {
+            LuauExecutionOutcome::Failed(err) => {
+                assert_eq!(err.code, LuauExecutionErrorCode::ScriptError);
+                assert_eq!(err.message, "boom");
+            }
+            other => panic!("unexpected outcome: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn decode_complete_and_pending_tasks() {
+        let done: LuauExecutionSessionTask = serde_json::from_value(json!({
+            "path": "p", "state": "COMPLETE", "output": {"results": [7]}
+        }))
+        .unwrap();
+        assert!(matches!(done.outcome(), LuauExecutionOutcome::Complete(r) if r == [json!(7)]));
+        let queued: LuauExecutionSessionTask =
+            serde_json::from_value(json!({"path": "p", "state": "QUEUED"})).unwrap();
+        assert!(!queued.is_done());
+    }
+
+    #[test]
+    fn input_body_omits_defaults() {
+        let input = LuauExecutionInput {
+            script: "return 1".into(),
+            timeout: None,
+            binary_input: Some("universes/1/luau-execution-session-task-binary-inputs/x".into()),
+            enable_binary_output: false,
+        };
+        assert_eq!(
+            serde_json::to_value(input).unwrap(),
+            json!({
+                "script": "return 1",
+                "binaryInput": "universes/1/luau-execution-session-task-binary-inputs/x"
+            })
+        );
+    }
 }

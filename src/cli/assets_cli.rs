@@ -12,11 +12,36 @@ use rbxcloud::rbx::{
         ArchiveAsset, CreateAsset, GetAsset, GetAssetOperation, UpdateAsset,
     },
 };
+use rbxcloud::rbx::{
+    types::RobloxUserId,
+    v1::assets::{AssetPermissionAction, PermissionSubject},
+};
+
+use super::to_json;
 
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum CreatorType {
     User,
     Group,
+}
+
+#[derive(Debug, Args)]
+pub struct AssetCommon {
+    /// Pretty-print the JSON response
+    #[clap(short, long, value_parser, default_value_t = false)]
+    pretty: bool,
+
+    /// Roblox Open Cloud API Key
+    #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
+    api_key: String,
+}
+
+/// Who to grant asset permissions to.
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+pub enum PermissionSubjectType {
+    User,
+    Group,
+    Universe,
 }
 
 #[derive(Debug, Subcommand)]
@@ -144,6 +169,97 @@ pub enum AssetsCommands {
         /// Roblox Open Cloud API Key
         #[clap(short, long, value_parser, env = "RBXCLOUD_API_KEY")]
         api_key: String,
+    },
+    /// List an asset's versions, newest first
+    Versions {
+        /// Asset ID
+        #[clap(short = 'i', long, value_parser)]
+        asset_id: u64,
+
+        /// Max items returned per page
+        #[clap(short, long, value_parser)]
+        max_page_size: Option<u32>,
+
+        /// Next page token
+        #[clap(short, long, value_parser)]
+        next_page_token: Option<String>,
+
+        #[clap(flatten)]
+        common: AssetCommon,
+    },
+
+    /// Get a specific version of an asset
+    GetVersion {
+        /// Asset ID
+        #[clap(short = 'i', long, value_parser)]
+        asset_id: u64,
+
+        /// Version number
+        #[clap(short = 'V', long, value_parser)]
+        version: u64,
+
+        #[clap(flatten)]
+        common: AssetCommon,
+    },
+
+    /// Roll an asset back to a previous version
+    Rollback {
+        /// Asset ID
+        #[clap(short = 'i', long, value_parser)]
+        asset_id: u64,
+
+        /// Version number to restore
+        #[clap(short = 'V', long, value_parser)]
+        version: u64,
+
+        #[clap(flatten)]
+        common: AssetCommon,
+    },
+
+    /// Grant a user, group, or experience permission to use or edit assets
+    GrantPermission {
+        /// Asset IDs (repeat or comma-separate)
+        #[clap(
+            short = 'i',
+            long,
+            value_parser,
+            value_delimiter = ',',
+            required = true
+        )]
+        asset_ids: Vec<u64>,
+
+        /// Type of subject receiving access
+        #[clap(short = 't', long, value_enum)]
+        subject_type: PermissionSubjectType,
+
+        /// ID of the user, group, or universe receiving access
+        #[clap(short = 's', long, value_parser)]
+        subject_id: u64,
+
+        /// Permission to grant
+        #[clap(short = 'g', long, value_enum, default_value = "use")]
+        action: AssetPermissionAction,
+
+        /// Also grant access to the assets' dependencies
+        #[clap(short = 'd', long, value_parser, default_value_t = false)]
+        dependencies: bool,
+
+        #[clap(flatten)]
+        common: AssetCommon,
+    },
+
+    /// Show a user's asset upload quotas
+    Quotas {
+        /// User ID
+        #[clap(short = 'U', long, value_parser)]
+        user_id: u64,
+
+        /// Filter, e.g. "quotaType == RATE_LIMIT_UPLOAD && assetType == Audio"
+        #[clap(short, long, value_parser)]
+        filter: Option<String>,
+
+        #[clap(flatten)]
+        common: AssetCommon,
     },
 }
 
@@ -357,6 +473,73 @@ impl Assets {
                     }
                     Err(err) => Err(anyhow::anyhow!(err)),
                 }
+            }
+            AssetsCommands::Versions {
+                asset_id,
+                max_page_size,
+                next_page_token,
+                common,
+            } => {
+                let rbx_cloud = super::v1_client(&common.api_key)?;
+                let res = rbx_cloud
+                    .assets()
+                    .list_versions(asset_id, max_page_size, next_page_token)
+                    .await?;
+                to_json(&res, common.pretty)
+            }
+
+            AssetsCommands::GetVersion {
+                asset_id,
+                version,
+                common,
+            } => {
+                let rbx_cloud = super::v1_client(&common.api_key)?;
+                let res = rbx_cloud.assets().get_version(asset_id, version).await?;
+                to_json(&res, common.pretty)
+            }
+
+            AssetsCommands::Rollback {
+                asset_id,
+                version,
+                common,
+            } => {
+                let rbx_cloud = super::v1_client(&common.api_key)?;
+                let res = rbx_cloud.assets().rollback(asset_id, version).await?;
+                to_json(&res, common.pretty)
+            }
+
+            AssetsCommands::GrantPermission {
+                asset_ids,
+                subject_type,
+                subject_id,
+                action,
+                dependencies,
+                common,
+            } => {
+                let subject = match subject_type {
+                    PermissionSubjectType::User => PermissionSubject::User(subject_id),
+                    PermissionSubjectType::Group => PermissionSubject::Group(subject_id),
+                    PermissionSubjectType::Universe => PermissionSubject::Universe(subject_id),
+                };
+                let rbx_cloud = super::v1_client(&common.api_key)?;
+                let res = rbx_cloud
+                    .assets()
+                    .grant_permissions(subject, action, &asset_ids, dependencies)
+                    .await?;
+                to_json(&res, common.pretty)
+            }
+
+            AssetsCommands::Quotas {
+                user_id,
+                filter,
+                common,
+            } => {
+                let client = super::v2_client(&common.api_key)?;
+                let res = client
+                    .user()
+                    .list_asset_quotas(RobloxUserId(user_id), filter, None, None)
+                    .await?;
+                to_json(&res, common.pretty)
             }
         }
     }

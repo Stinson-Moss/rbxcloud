@@ -57,6 +57,10 @@ run = [
 description = "Run unit tests and doctests"
 run = "cargo test --all-features"
 
+[tasks."test:live"]
+description = "Run live tests against your test experience (configure mise.local.toml; append a name to filter, e.g. `-- luau`)"
+run = "cargo test --test live -- --ignored --test-threads=4"
+
 [tasks.ci]
 description = "Run every check CI runs: check, fmt, clippy, tests"
 depends = ["lint", "test"]
@@ -65,7 +69,7 @@ run = "cargo check"
 # ---------------------------------------------------------------- docs
 
 [tasks."docs:cli"]
-description = "Regenerate the datastore, ordered-datastore, and memory-store CLI docs from --help"
+description = "Regenerate the generated CLI docs pages (see scripts/gen_cli_docs.py) from --help"
 depends = ["build"]
 run = "uv run --no-project scripts/gen_cli_docs.py"
 

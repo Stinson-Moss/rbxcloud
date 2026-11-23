@@ -50,7 +50,7 @@ Options:
 
 ### Example
 ```
-$ rbxcloud universe update-description -n "Place description here." -u 12345 -p 67890 -a MY_KEY
+$ rbxcloud place update-description -d "Place description here." -u 12345 -p 67890 -a MY_KEY
 ```
 
 ## Updating Server Size

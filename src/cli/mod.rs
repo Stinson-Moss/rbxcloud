@@ -1,14 +1,18 @@
 mod assets_cli;
+mod creator_store_cli;
 mod datastore_cli;
 mod experience_cli;
 mod group_cli;
+mod instance_cli;
 mod inventory_cli;
 mod luau_execution_cli;
 mod memory_store_cli;
 mod messaging_cli;
+mod monetization_cli;
 mod notification_cli;
 mod ordered_datastore_cli;
 mod place_cli;
+mod secret_cli;
 mod subscription_cli;
 mod universe_cli;
 mod user_cli;
@@ -17,14 +21,18 @@ mod user_restriction_cli;
 use std::{sync::OnceLock, time::Duration};
 
 use clap::{Parser, Subcommand};
+use creator_store_cli::CreatorStore;
+use instance_cli::InstanceCli;
 use inventory_cli::Inventory;
 use luau_execution_cli::Luau;
 use memory_store_cli::MemoryStore;
+use monetization_cli::{DeveloperProductCli, GamePassCli};
 use rbxcloud::rbx::{
     http::{self, HttpClient},
     v1::RbxCloud,
     v2::Client,
 };
+use secret_cli::SecretCli;
 use universe_cli::Universe;
 use user_cli::User;
 use user_restriction_cli::UserRestriction;
@@ -42,6 +50,7 @@ pub(crate) struct Cli {
     #[clap(
         long,
         global = true,
+        display_order = 900,
         value_parser,
         env = "RBXCLOUD_REQUEST_TIMEOUT",
         default_value_t = http::DEFAULT_TIMEOUT.as_secs()
@@ -50,7 +59,13 @@ pub(crate) struct Cli {
 
     /// Proxy URL for all requests (e.g. http://host:port or socks5://host:port).
     /// Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables.
-    #[clap(long, global = true, value_parser, env = "RBXCLOUD_PROXY")]
+    #[clap(
+        long,
+        global = true,
+        display_order = 901,
+        value_parser,
+        env = "RBXCLOUD_PROXY"
+    )]
     pub proxy: Option<String>,
 
     #[clap(subcommand)]
@@ -99,6 +114,21 @@ pub(crate) enum Command {
 
     /// Access the Roblox Experience API
     Experience(Experience),
+
+    /// Read and edit the data model of a published place
+    Instance(InstanceCli),
+
+    /// Manage Creator Store products and search the store
+    CreatorStore(CreatorStore),
+
+    /// Manage a universe's secrets store
+    Secret(SecretCli),
+
+    /// Manage a universe's game passes
+    GamePass(GamePassCli),
+
+    /// Manage a universe's developer products
+    DeveloperProduct(DeveloperProductCli),
 
     /// Access the Roblox Messaging API
     Messaging(Messaging),
@@ -149,6 +179,11 @@ impl Cli {
         match self.command {
             Command::Assets(command) => command.run().await,
             Command::Experience(command) => command.run().await,
+            Command::Instance(command) => command.run().await,
+            Command::CreatorStore(command) => command.run().await,
+            Command::Secret(command) => command.run().await,
+            Command::GamePass(command) => command.run().await,
+            Command::DeveloperProduct(command) => command.run().await,
             Command::Messaging(command) => command.run().await,
             Command::Datastore(command) => command.run().await,
             Command::OrderedDatastore(command) => command.run().await,
@@ -187,5 +222,101 @@ mod tests {
     #[test]
     fn cli_definition_is_valid() {
         Cli::command().debug_assert();
+    }
+
+    /// Split a documented command line into arguments, honoring single and
+    /// double quotes.
+    fn split_args(line: &str) -> Vec<String> {
+        let mut args = vec![];
+        let mut current = String::new();
+        let mut in_arg = false;
+        let mut quote: Option<char> = None;
+        let mut chars = line.chars();
+        while let Some(c) = chars.next() {
+            match (quote, c) {
+                (Some(q), c) if c == q => quote = None,
+                (Some('"'), '\\') => current.extend(chars.next()),
+                (Some(_), c) => current.push(c),
+                (None, '"' | '\'') => {
+                    quote = Some(c);
+                    in_arg = true;
+                }
+                (None, c) if c.is_whitespace() => {
+                    if in_arg {
+                        args.push(std::mem::take(&mut current));
+                        in_arg = false;
+                    }
+                }
+                (None, c) => {
+                    current.push(c);
+                    in_arg = true;
+                }
+            }
+        }
+        if in_arg {
+            args.push(current);
+        }
+        args
+    }
+
+    /// Every `$ rbxcloud ...` example in the CLI docs must parse.
+    #[test]
+    fn documented_examples_parse() {
+        use clap::{error::ErrorKind, Parser};
+
+        let docs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/cli");
+        let mut checked = 0;
+        let mut failures = vec![];
+        for entry in std::fs::read_dir(&docs).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            for line in text.lines() {
+                let Some(cmd) = line.trim().strip_prefix("$ ") else {
+                    continue;
+                };
+                let cmd = cmd.trim();
+                if !cmd.starts_with("rbxcloud ") {
+                    continue;
+                }
+                checked += 1;
+                let result = Cli::try_parse_from(split_args(cmd));
+                if let Err(e) = result.as_ref().map(|_| ()).or_else(|e| match e.kind() {
+                    // `--help` / `--version` are valid invocations.
+                    ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => Ok(()),
+                    _ => Err(e),
+                }) {
+                    let name = path.file_name().unwrap().to_string_lossy();
+                    let first_line = e.to_string().lines().next().unwrap_or_default().to_string();
+                    failures.push(format!("{name}: `{cmd}`\n    {first_line}"));
+                }
+            }
+        }
+        assert!(checked > 0, "no examples found in {}", docs.display());
+        assert!(
+            failures.is_empty(),
+            "{} of {checked} documented examples don't parse:\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
+    }
+
+    #[test]
+    fn split_args_handles_quotes() {
+        assert_eq!(
+            split_args(r#"rbxcloud x -D '{"a":1}' -n "100 Coins" -f "user == 'users/1'""#),
+            vec![
+                "rbxcloud",
+                "x",
+                "-D",
+                r#"{"a":1}"#,
+                "-n",
+                "100 Coins",
+                "-f",
+                "user == 'users/1'"
+            ]
+        );
     }
 }

@@ -1,0 +1,16 @@
+# Copy to mise.local.toml (gitignored) and fill in to run `mise run test:live`.
+# Use a dedicated test experience: with RBXCLOUD_TEST_WRITE = "1", the tests
+# write and then delete entries named "rbxcloud-live-<run id>".
+
+[env]
+RBXCLOUD_API_KEY = "paste-your-api-key"
+
+# Each live test skips itself if an ID it needs is missing.
+RBXCLOUD_TEST_UNIVERSE_ID = "1234567890"
+RBXCLOUD_TEST_PLACE_ID = "1234567890"
+RBXCLOUD_TEST_GROUP_ID = "1234567"
+RBXCLOUD_TEST_USER_ID = "1234567"
+
+# "1" to also run tests that create and delete data store / memory store
+# entries, publish a message, and create a temporary secret.
+RBXCLOUD_TEST_WRITE = "0"

@@ -10,12 +10,8 @@ Usage: rbxcloud memory-store queue-add [OPTIONS] --queue <QUEUE> --data <DATA> -
 Options:
   -q, --queue <QUEUE>
           Queue name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -D, --data <DATA>
           Item data as JSON (bare text is sent as a string)
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -r, --priority <PRIORITY>
           Priority; higher priority items are read first
   -t, --ttl <TTL>
@@ -26,6 +22,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -43,12 +43,8 @@ Usage: rbxcloud memory-store queue-read [OPTIONS] --queue <QUEUE> --universe-id 
 Options:
   -q, --queue <QUEUE>
           Queue name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -c, --count <COUNT>
           Number of items to read (1-100)
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -o, --all-or-nothing
           Fail unless `count` items are available
   -w, --invisibility-window <INVISIBILITY_WINDOW>
@@ -59,6 +55,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -76,10 +76,6 @@ Usage: rbxcloud memory-store queue-discard [OPTIONS] --queue <QUEUE> --read-id <
 Options:
   -q, --queue <QUEUE>
           Queue name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -r, --read-id <READ_ID>
           The `id` field from the `queue-read` response
   -u, --universe-id <UNIVERSE_ID>
@@ -88,6 +84,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -105,12 +105,8 @@ Usage: rbxcloud memory-store sorted-map-list [OPTIONS] --map <MAP> --universe-id
 Options:
   -m, --map <MAP>
           Sorted map name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -l, --limit <LIMIT>
           Maximum number of items to return (1-200)
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -c, --cursor <CURSOR>
           Page token from a previous response's `nextPageToken`
   -o, --order <ORDER>
@@ -123,6 +119,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -140,18 +140,18 @@ Usage: rbxcloud memory-store sorted-map-get [OPTIONS] --map <MAP> --key <KEY> --
 Options:
   -m, --map <MAP>
           Sorted map name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -k, --key <KEY>
           Item key
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -u, --universe-id <UNIVERSE_ID>
           Universe ID of the experience
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -169,12 +169,8 @@ Usage: rbxcloud memory-store sorted-map-set [OPTIONS] --map <MAP> --key <KEY> --
 Options:
   -m, --map <MAP>
           Sorted map name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -k, --key <KEY>
           Item key
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -D, --data <DATA>
           Item value as JSON (bare text is sent as a string)
   -t, --ttl <TTL>
@@ -191,6 +187,10 @@ Options:
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -208,18 +208,18 @@ Usage: rbxcloud memory-store sorted-map-delete [OPTIONS] --map <MAP> --key <KEY>
 Options:
   -m, --map <MAP>
           Sorted map name
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
   -k, --key <KEY>
           Item key
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -u, --universe-id <UNIVERSE_ID>
           Universe ID of the experience
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
           Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
   -h, --help
           Print help
 ```
@@ -235,12 +235,6 @@ Delete ALL queues and sorted maps in the universe
 Usage: rbxcloud memory-store flush [OPTIONS] --universe-id <UNIVERSE_ID> --api-key <API_KEY>
 
 Options:
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit)
-          
-          [env: RBXCLOUD_REQUEST_TIMEOUT=]
-          [default: 120]
-
   -s, --scope <SCOPE>
           Which scope to flush
           
@@ -249,11 +243,6 @@ Options:
           Possible values:
           - live: Live game servers (the default)
           - test: Studio test sessions
-
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables
-          
-          [env: RBXCLOUD_PROXY=]
 
   -u, --universe-id <UNIVERSE_ID>
           Universe ID of the experience
@@ -265,6 +254,17 @@ Options:
           Roblox Open Cloud API Key
           
           [env: RBXCLOUD_API_KEY=]
+
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit)
+          
+          [env: RBXCLOUD_REQUEST_TIMEOUT=]
+          [default: 120]
+
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables
+          
+          [env: RBXCLOUD_PROXY=]
 
   -h, --help
           Print help (see a summary with '-h')
@@ -283,17 +283,6 @@ Usage: rbxcloud memory-store flush-status [OPTIONS] --operation-id <OPERATION_ID
 Options:
   -o, --operation-id <OPERATION_ID>
           Operation ID returned by `flush`
-
-      --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit)
-          
-          [env: RBXCLOUD_REQUEST_TIMEOUT=]
-          [default: 120]
-
-      --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables
-          
-          [env: RBXCLOUD_PROXY=]
 
   -s, --scope <SCOPE>
           Scope the flush was started with
@@ -314,6 +303,17 @@ Options:
           Roblox Open Cloud API Key
           
           [env: RBXCLOUD_API_KEY=]
+
+      --request-timeout <REQUEST_TIMEOUT>
+          Maximum seconds to wait for each request to Roblox (0 = no limit)
+          
+          [env: RBXCLOUD_REQUEST_TIMEOUT=]
+          [default: 120]
+
+      --proxy <PROXY>
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables
+          
+          [env: RBXCLOUD_PROXY=]
 
   -h, --help
           Print help (see a summary with '-h')

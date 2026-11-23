@@ -21,3 +21,4 @@ tokio = { version = "1.36.0", features = ["full"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 rand = "0.9.0"
 ruzstd = "0.8"
+crypto_box = { version = "0.9", features = ["seal"] }

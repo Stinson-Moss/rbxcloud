@@ -8,3 +8,6 @@ test.sh
 
 # mkdocs output (`mise run docs:build`)
 /site
+
+# Local mise overrides, including live-test credentials
+mise.local.toml

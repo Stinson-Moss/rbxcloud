@@ -60,6 +60,119 @@ PAGES = {
             "flush-status": "rbxcloud memory-store flush-status -o OPERATION_ID -u 12345 -a MY_KEY",
         },
     ),
+    "cli-instance.md": (
+        "Instance API",
+        "instance",
+        "Read and edit the data model of a published place without opening Studio. "
+        "`--instance-id` defaults to `root`, the top of the data model. Roblox processes "
+        "these requests as long-running operations; the CLI waits for them to finish. "
+        "Script sources are limited to 200,000 bytes.",
+        {
+            "get": "rbxcloud instance get -u 12345 -i 67890 -n INSTANCE_ID -p -a MY_KEY",
+            "children": "rbxcloud instance children -u 12345 -i 67890 -p -a MY_KEY",
+            "get-source": "rbxcloud instance get-source -u 12345 -i 67890 -n INSTANCE_ID -a MY_KEY",
+            "set-source": "rbxcloud instance set-source -u 12345 -i 67890 -n INSTANCE_ID -f src/Main.server.luau -a MY_KEY",
+        },
+    ),
+    "cli-creator-store.md": (
+        "Creator Store API",
+        "creator-store",
+        "Distribute assets on the Creator Store and search it. Prices are in USD; "
+        "product IDs appear at the end of the `path` field in responses.",
+        {
+            "create-product": "rbxcloud creator-store create-product -k plugin -A 123456 -P 4.99 -a MY_KEY",
+            "get-product": "rbxcloud creator-store get-product -i PRODUCT_ID -p -a MY_KEY",
+            "update-product": "rbxcloud creator-store update-product -i PRODUCT_ID -P 0 -u true -a MY_KEY",
+            "search": "rbxcloud creator-store search -q sword -c model -s top -d -l 10 -p -a MY_KEY",
+            "get-asset": "rbxcloud creator-store get-asset -A 123456 -p -a MY_KEY",
+        },
+    ),
+    "cli-secret.md": (
+        "Secrets Store API",
+        "secret",
+        "Manage the secrets game servers read with `HttpService:GetSecret`. Values are "
+        "encrypted locally with the universe's public key (a libsodium sealed box) before "
+        "they are sent, and can never be read back. Prefer `--from-env` or `--filepath` "
+        "over `--value` so secrets stay out of shell history.",
+        {
+            "list": "rbxcloud secret list -u 12345 -p -a MY_KEY",
+            "create": "rbxcloud secret create -u 12345 -i discord_webhook -e DISCORD_WEBHOOK -d *.discord.com -a MY_KEY",
+            "update": "rbxcloud secret update -u 12345 -i discord_webhook -f webhook.txt -a MY_KEY",
+            "delete": "rbxcloud secret delete -u 12345 -i discord_webhook -a MY_KEY",
+        },
+    ),
+    "cli-game-pass.md": (
+        "Game Pass API",
+        "game-pass",
+        "Manage a universe's game passes. Prices are in Robux.",
+        {
+            "list": "rbxcloud game-pass list -u 12345 -p -a MY_KEY",
+            "get": "rbxcloud game-pass get -u 12345 -g 98765 -p -a MY_KEY",
+            "create": "rbxcloud game-pass create -u 12345 -n VIP -d \"VIP perks\" -r 250 -s true --icon vip.png -a MY_KEY",
+            "update": "rbxcloud game-pass update -u 12345 -g 98765 -r 199 -a MY_KEY",
+        },
+    ),
+    "cli-developer-product.md": (
+        "Developer Product API",
+        "developer-product",
+        "Manage a universe's developer products. Prices are in Robux.",
+        {
+            "list": "rbxcloud developer-product list -u 12345 -p -a MY_KEY",
+            "get": "rbxcloud developer-product get -u 12345 -i 98765 -p -a MY_KEY",
+            "create": "rbxcloud developer-product create -u 12345 -n \"100 Coins\" -r 25 -s true -a MY_KEY",
+            "update": "rbxcloud developer-product update -u 12345 -i 98765 -s false -a MY_KEY",
+        },
+    ),
+    "cli-group.md": (
+        "Group API",
+        "group",
+        "Read group information, manage join requests and member roles, and read group forums.",
+        {
+            "get": "rbxcloud group get -p -g 12345 -a MY_KEY",
+            "shout": "rbxcloud group shout -g 12345 -o -a MY_KEY",
+            "roles": "rbxcloud group roles -p -g 12345 -a MY_KEY",
+            "role": "rbxcloud group role -g 12345 -r 678 -p -a MY_KEY",
+            "memberships": "rbxcloud group memberships -p -g 12345 -f \"user == 'users/156'\" -a MY_KEY",
+            "assign-role": "rbxcloud group assign-role -g 12345 -U 156 -r 678 -a MY_KEY",
+            "unassign-role": "rbxcloud group unassign-role -g 12345 -U 156 -r 678 -a MY_KEY",
+            "join-requests": "rbxcloud group join-requests -g 12345 -m 50 -p -a MY_KEY",
+            "accept-join": "rbxcloud group accept-join -g 12345 -j 156 -a MY_KEY",
+            "decline-join": "rbxcloud group decline-join -g 12345 -j 156 -a MY_KEY",
+            "forum-categories": "rbxcloud group forum-categories -g 12345 -p -a MY_KEY",
+            "forum-posts": "rbxcloud group forum-posts -g 12345 -c CATEGORY_ID -p -a MY_KEY",
+            "forum-comments": "rbxcloud group forum-comments -g 12345 -c CATEGORY_ID -i POST_ID -p -a MY_KEY",
+        },
+    ),
+    "cli-assets.md": (
+        "Assets API",
+        "assets",
+        "Upload and manage assets, their versions, and who may use them.",
+        {
+            "create": "rbxcloud assets create -t decal-png -n Logo -d \"Game logo\" -c user -i 156 -f logo.png -a MY_KEY",
+            "update": "rbxcloud assets update -t model-fbx -i 123456 -f model.fbx -a MY_KEY",
+            "get-operation": "rbxcloud assets get-operation -i OPERATION_ID -p -a MY_KEY",
+            "get": "rbxcloud assets get -i 123456 -p -a MY_KEY",
+            "archive": "rbxcloud assets archive -i 123456 -a MY_KEY",
+            "restore": "rbxcloud assets restore -i 123456 -a MY_KEY",
+            "versions": "rbxcloud assets versions -i 123456 -p -a MY_KEY",
+            "get-version": "rbxcloud assets get-version -i 123456 -V 3 -p -a MY_KEY",
+            "rollback": "rbxcloud assets rollback -i 123456 -V 3 -a MY_KEY",
+            "grant-permission": "rbxcloud assets grant-permission -i 111,222 -t universe -s 12345 -a MY_KEY",
+            "quotas": "rbxcloud assets quotas -U 156 -p -a MY_KEY",
+        },
+    ),
+    "cli-luau-execution.md": (
+        "Luau Execution API",
+        "luau",
+        "Run Luau scripts against a place on Roblox's servers. A script can receive a file "
+        "of up to 100 MiB as `({...})[1].BinaryInput`, and with `--binary-output` it can "
+        "return a large `BinaryOutput` buffer to download with `get-task --save-binary-output`.",
+        {
+            "execute": "rbxcloud luau execute -u 12345 -i 67890 -f script.luau -b data.bin -a MY_KEY",
+            "get-task": "rbxcloud luau get-task -u 12345 -i 67890 -s SESSION_ID -t TASK_ID --save-binary-output out.bin -p -a MY_KEY",
+            "get-logs": "rbxcloud luau get-logs -u 12345 -i 67890 -s SESSION_ID -t TASK_ID -w structured -p -a MY_KEY",
+        },
+    ),
 }
 
 

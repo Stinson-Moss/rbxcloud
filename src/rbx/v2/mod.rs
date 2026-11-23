@@ -32,21 +32,41 @@ use self::{
     notification::{Notification, NotificationParams, NotificationResponse},
     subscription::{GetSubscriptionParams, GetSubscriptionResponse, SubscriptionView},
 };
+pub mod creator_store;
 pub mod data_store;
+pub mod developer_product;
+mod form;
+pub mod game_pass;
 pub mod group;
+pub mod instance;
 pub mod inventory;
 pub mod luau_execution;
 pub mod memory_store;
 pub mod notification;
+pub mod operation;
 pub mod ordered_data_store;
 pub mod place;
+pub mod secret;
 pub mod subscription;
 pub mod universe;
 pub mod user;
 pub mod user_restriction;
 
 use crate::rbx::{error::Error, http::HttpClient};
+pub use form::ImageUpload;
+
+use creator_store::{CreatorStoreAsset, CreatorStoreProduct, SearchCreatorStoreAssetsResponse};
+use developer_product::{DeveloperProduct, DeveloperProductFields, ListDeveloperProductsResponse};
+use game_pass::{GamePass, GamePassFields, ListGamePassesResponse};
+use group::{
+    GroupListParams, GroupMembership, GroupRole, ListGroupForumCategoriesResponse,
+    ListGroupForumCommentsResponse, ListGroupForumPostsResponse, ListGroupJoinRequestsResponse,
+};
+use instance::{Instance, InstanceDetails, ListInstanceChildrenResponse};
+use operation::PollOptions;
+use secret::{ListSecretsResponse, Secret, UniversePublicKey};
 use serde_json::{Map, Value};
+use user::ListAssetQuotasResponse;
 
 use data_store::{
     DataStore, DataStoreEntry, DataStoreLocation, ListDataStoreEntriesResponse,
@@ -646,6 +666,263 @@ impl MemoryStoreClient {
     }
 }
 
+/// Access to the data model of a published place (Instance API).
+///
+/// Methods wait for Roblox's long-running operations to finish, polling
+/// according to `poll`.
+#[derive(Debug, Clone)]
+pub struct InstanceClient {
+    http: HttpClient,
+    pub universe_id: UniverseId,
+    pub place_id: PlaceId,
+    pub poll: PollOptions,
+}
+
+impl InstanceClient {
+    fn params(&self, instance_id: &str) -> instance::InstanceParams {
+        instance::InstanceParams {
+            universe_id: self.universe_id,
+            place_id: self.place_id,
+            instance_id: instance_id.to_string(),
+        }
+    }
+
+    /// Get an instance and its properties. Use [`instance::ROOT`] for the
+    /// data model root.
+    pub async fn get(&self, instance_id: &str) -> Result<Instance, Error> {
+        let op = instance::get_instance(&self.http, &self.params(instance_id)).await?;
+        operation::wait(&self.http, op, self.poll).await
+    }
+
+    /// List an instance's direct children.
+    pub async fn list_children(
+        &self,
+        instance_id: &str,
+        max_page_size: Option<u32>,
+        page_token: Option<String>,
+    ) -> Result<ListInstanceChildrenResponse, Error> {
+        let op = instance::list_children(
+            &self.http,
+            &self.params(instance_id),
+            max_page_size,
+            page_token,
+        )
+        .await?;
+        operation::wait(&self.http, op, self.poll).await
+    }
+
+    /// Update an instance's class-specific properties.
+    pub async fn update(
+        &self,
+        instance_id: &str,
+        details: &InstanceDetails,
+        update_mask: Option<String>,
+    ) -> Result<Instance, Error> {
+        let op =
+            instance::update_instance(&self.http, &self.params(instance_id), details, update_mask)
+                .await?;
+        operation::wait(&self.http, op, self.poll).await
+    }
+
+    /// Replace the source of a `Script`, `LocalScript`, or `ModuleScript`.
+    ///
+    /// The instance is fetched first to determine its script class.
+    pub async fn set_script_source(
+        &self,
+        instance_id: &str,
+        source: String,
+    ) -> Result<Instance, Error> {
+        let current = self.get(instance_id).await?;
+        let kind = current
+            .engine_instance
+            .details
+            .as_ref()
+            .and_then(|d| d.script_kind())
+            .ok_or_else(|| {
+                Error::EndpointError(format!(
+                    "instance {instance_id} is not a Script, LocalScript, or ModuleScript"
+                ))
+            })?;
+        self.update(
+            instance_id,
+            &InstanceDetails::with_source(kind, source),
+            None,
+        )
+        .await
+    }
+}
+
+/// Access to Creator Store products and search.
+#[derive(Debug, Clone)]
+pub struct CreatorStoreClient {
+    http: HttpClient,
+}
+
+impl CreatorStoreClient {
+    pub async fn get_product(&self, product_id: &str) -> Result<CreatorStoreProduct, Error> {
+        creator_store::get_product(&self.http, product_id).await
+    }
+
+    /// Distribute an asset on the Creator Store for the first time.
+    pub async fn create_product(
+        &self,
+        product: &CreatorStoreProduct,
+    ) -> Result<CreatorStoreProduct, Error> {
+        creator_store::create_product(&self.http, product).await
+    }
+
+    /// Update a product. See [`creator_store::update_product`].
+    pub async fn update_product(
+        &self,
+        product_id: &str,
+        product: &CreatorStoreProduct,
+        update_mask: Option<String>,
+        allow_missing: Option<bool>,
+    ) -> Result<CreatorStoreProduct, Error> {
+        creator_store::update_product(&self.http, product_id, product, update_mask, allow_missing)
+            .await
+    }
+
+    pub async fn search(
+        &self,
+        params: &creator_store::SearchParams,
+    ) -> Result<SearchCreatorStoreAssetsResponse, Error> {
+        creator_store::search(&self.http, params).await
+    }
+
+    pub async fn get_asset(&self, asset_id: u64) -> Result<CreatorStoreAsset, Error> {
+        creator_store::get_asset(&self.http, asset_id).await
+    }
+}
+
+/// Access to a universe's secrets store.
+#[derive(Debug, Clone)]
+pub struct SecretClient {
+    http: HttpClient,
+    pub universe_id: UniverseId,
+}
+
+impl SecretClient {
+    pub async fn list(
+        &self,
+        limit: Option<u32>,
+        cursor: Option<String>,
+    ) -> Result<ListSecretsResponse, Error> {
+        secret::list_secrets(&self.http, self.universe_id, limit, cursor).await
+    }
+
+    /// The universe's public key, used to encrypt secret values.
+    pub async fn public_key(&self) -> Result<UniversePublicKey, Error> {
+        secret::get_public_key(&self.http, self.universe_id).await
+    }
+
+    /// Create a secret; the value is encrypted locally before sending.
+    pub async fn create(
+        &self,
+        secret_id: &str,
+        value: &[u8],
+        domain: Option<&str>,
+    ) -> Result<Secret, Error> {
+        secret::create_secret(&self.http, self.universe_id, secret_id, value, domain).await
+    }
+
+    /// Replace a secret's value; encrypted locally before sending.
+    pub async fn update(
+        &self,
+        secret_id: &str,
+        value: &[u8],
+        domain: Option<&str>,
+    ) -> Result<Secret, Error> {
+        secret::update_secret(&self.http, self.universe_id, secret_id, value, domain).await
+    }
+
+    pub async fn delete(&self, secret_id: &str) -> Result<(), Error> {
+        secret::delete_secret(&self.http, self.universe_id, secret_id).await
+    }
+}
+
+/// Access to a universe's game passes.
+#[derive(Debug, Clone)]
+pub struct GamePassClient {
+    http: HttpClient,
+    pub universe_id: UniverseId,
+}
+
+impl GamePassClient {
+    pub async fn list(
+        &self,
+        page_size: Option<u32>,
+        page_token: Option<String>,
+        for_sale_only: Option<bool>,
+    ) -> Result<ListGamePassesResponse, Error> {
+        game_pass::list_game_passes(
+            &self.http,
+            self.universe_id,
+            page_size,
+            page_token,
+            for_sale_only,
+        )
+        .await
+    }
+
+    pub async fn get(&self, game_pass_id: u64) -> Result<GamePass, Error> {
+        game_pass::get_game_pass(&self.http, self.universe_id, game_pass_id).await
+    }
+
+    pub async fn create(&self, fields: &GamePassFields) -> Result<GamePass, Error> {
+        game_pass::create_game_pass(&self.http, self.universe_id, fields).await
+    }
+
+    pub async fn update(&self, game_pass_id: u64, fields: &GamePassFields) -> Result<(), Error> {
+        game_pass::update_game_pass(&self.http, self.universe_id, game_pass_id, fields).await
+    }
+}
+
+/// Access to a universe's developer products.
+#[derive(Debug, Clone)]
+pub struct DeveloperProductClient {
+    http: HttpClient,
+    pub universe_id: UniverseId,
+}
+
+impl DeveloperProductClient {
+    pub async fn list(
+        &self,
+        page_size: Option<u32>,
+        page_token: Option<String>,
+    ) -> Result<ListDeveloperProductsResponse, Error> {
+        developer_product::list_developer_products(
+            &self.http,
+            self.universe_id,
+            page_size,
+            page_token,
+        )
+        .await
+    }
+
+    pub async fn get(&self, product_id: u64) -> Result<DeveloperProduct, Error> {
+        developer_product::get_developer_product(&self.http, self.universe_id, product_id).await
+    }
+
+    pub async fn create(&self, fields: &DeveloperProductFields) -> Result<DeveloperProduct, Error> {
+        developer_product::create_developer_product(&self.http, self.universe_id, fields).await
+    }
+
+    pub async fn update(
+        &self,
+        product_id: u64,
+        fields: &DeveloperProductFields,
+    ) -> Result<(), Error> {
+        developer_product::update_developer_product(
+            &self.http,
+            self.universe_id,
+            product_id,
+            fields,
+        )
+        .await
+    }
+}
+
 impl GroupClient {
     pub async fn get_info(&self) -> Result<GetGroupResponse, Error> {
         group::get_group(
@@ -700,6 +977,79 @@ impl GroupClient {
         )
         .await
     }
+
+    /// List pending join requests.
+    pub async fn list_join_requests(
+        &self,
+        params: &GroupListParams,
+    ) -> Result<ListGroupJoinRequestsResponse, Error> {
+        group::list_join_requests(&self.http, self.group_id, params).await
+    }
+
+    pub async fn accept_join_request(&self, join_request_id: &str) -> Result<(), Error> {
+        group::accept_join_request(&self.http, self.group_id, join_request_id).await
+    }
+
+    pub async fn decline_join_request(&self, join_request_id: &str) -> Result<(), Error> {
+        group::decline_join_request(&self.http, self.group_id, join_request_id).await
+    }
+
+    pub async fn get_role(&self, role_id: u64) -> Result<GroupRole, Error> {
+        group::get_role(&self.http, self.group_id, role_id).await
+    }
+
+    /// Give a member a role. `membership_id` is the last segment of the
+    /// membership's `path`.
+    pub async fn assign_role(
+        &self,
+        membership_id: &str,
+        role_id: u64,
+    ) -> Result<GroupMembership, Error> {
+        group::assign_role(&self.http, self.group_id, membership_id, role_id).await
+    }
+
+    pub async fn unassign_role(
+        &self,
+        membership_id: &str,
+        role_id: u64,
+    ) -> Result<GroupMembership, Error> {
+        group::unassign_role(&self.http, self.group_id, membership_id, role_id).await
+    }
+
+    /// Find a user's membership in this group, if they are a member.
+    pub async fn find_membership(
+        &self,
+        user_id: RobloxUserId,
+    ) -> Result<Option<GroupMembership>, Error> {
+        let res = self
+            .list_memberships(Some(1), Some(format!("user == 'users/{user_id}'")), None)
+            .await?;
+        Ok(res.group_memberships.into_iter().next())
+    }
+
+    pub async fn list_forum_categories(
+        &self,
+        params: &GroupListParams,
+    ) -> Result<ListGroupForumCategoriesResponse, Error> {
+        group::list_forum_categories(&self.http, self.group_id, params).await
+    }
+
+    pub async fn list_forum_posts(
+        &self,
+        category_id: &str,
+        params: &GroupListParams,
+    ) -> Result<ListGroupForumPostsResponse, Error> {
+        group::list_forum_posts(&self.http, self.group_id, category_id, params).await
+    }
+
+    pub async fn list_forum_comments(
+        &self,
+        category_id: &str,
+        post_id: &str,
+        params: &GroupListParams,
+    ) -> Result<ListGroupForumCommentsResponse, Error> {
+        group::list_forum_comments(&self.http, self.group_id, category_id, post_id, params).await
+    }
 }
 
 impl InventoryClient {
@@ -737,9 +1087,72 @@ impl LuauExecutionClient {
                 version_id: self.version_id.clone(),
                 script,
                 timeout,
+                binary_input: None,
+                enable_binary_output: false,
             },
         )
         .await
+    }
+
+    /// Create a task with a binary input (uploaded first) and/or binary
+    /// output enabled.
+    pub async fn create_task_with_binary(
+        &self,
+        script: String,
+        timeout: Option<String>,
+        binary_input: Option<Vec<u8>>,
+        enable_binary_output: bool,
+    ) -> Result<NewLuauExecutionSessionTask, Error> {
+        let binary_input = match binary_input {
+            Some(data) => Some(
+                luau_execution::upload_binary_input(&self.http, self.universe_id, data)
+                    .await?
+                    .path,
+            ),
+            None => None,
+        };
+        luau_execution::create_luau_execution_task(
+            &self.http,
+            &CreateLuauExecutionTaskParams {
+                universe_id: self.universe_id,
+                place_id: self.place_id,
+                version_id: self.version_id.clone(),
+                script,
+                timeout,
+                binary_input,
+                enable_binary_output,
+            },
+        )
+        .await
+    }
+
+    /// Wait for a task (e.g. one returned by `create_task`) to finish,
+    /// polling every second for up to 5 minutes.
+    pub async fn wait(
+        &self,
+        task: LuauExecutionSessionTask,
+    ) -> Result<LuauExecutionSessionTask, Error> {
+        luau_execution::wait_for_luau_execution_task(
+            &self.http,
+            task,
+            PollOptions {
+                interval: std::time::Duration::from_secs(1),
+                max_attempts: 300,
+            },
+        )
+        .await
+    }
+
+    /// Download a finished task's binary output.
+    pub async fn download_binary_output(
+        &self,
+        task: &LuauExecutionSessionTask,
+    ) -> Result<Vec<u8>, Error> {
+        let uri = task
+            .binary_output_uri
+            .as_deref()
+            .ok_or_else(|| Error::EndpointError("task has no binary output".to_string()))?;
+        luau_execution::download_binary_output(&self.http, uri).await
     }
 
     pub async fn get_task(
@@ -905,6 +1318,17 @@ impl UniverseClient {
 }
 
 impl UserClient {
+    /// List a user's asset quotas (e.g. monthly audio upload limits).
+    pub async fn list_asset_quotas(
+        &self,
+        user_id: RobloxUserId,
+        filter: Option<String>,
+        max_page_size: Option<u32>,
+        page_token: Option<String>,
+    ) -> Result<ListAssetQuotasResponse, Error> {
+        user::list_asset_quotas(&self.http, user_id, filter, max_page_size, page_token).await
+    }
+
     pub async fn get_user(&self, user_id: RobloxUserId) -> Result<GetUserResponse, Error> {
         user::get_user(&self.http, &GetUserParams { user_id }).await
     }
@@ -1051,6 +1475,47 @@ impl Client {
     /// Memory stores for a universe.
     pub fn memory_store(&self, universe_id: UniverseId) -> MemoryStoreClient {
         MemoryStoreClient {
+            http: self.http.clone(),
+            universe_id,
+        }
+    }
+
+    /// The data model of a published place (Instance API).
+    pub fn instance(&self, universe_id: UniverseId, place_id: PlaceId) -> InstanceClient {
+        InstanceClient {
+            http: self.http.clone(),
+            universe_id,
+            place_id,
+            poll: PollOptions::default(),
+        }
+    }
+
+    /// Creator Store products and search.
+    pub fn creator_store(&self) -> CreatorStoreClient {
+        CreatorStoreClient {
+            http: self.http.clone(),
+        }
+    }
+
+    /// A universe's secrets store.
+    pub fn secrets(&self, universe_id: UniverseId) -> SecretClient {
+        SecretClient {
+            http: self.http.clone(),
+            universe_id,
+        }
+    }
+
+    /// A universe's game passes.
+    pub fn game_passes(&self, universe_id: UniverseId) -> GamePassClient {
+        GamePassClient {
+            http: self.http.clone(),
+            universe_id,
+        }
+    }
+
+    /// A universe's developer products.
+    pub fn developer_products(&self, universe_id: UniverseId) -> DeveloperProductClient {
+        DeveloperProductClient {
             http: self.http.clone(),
             universe_id,
         }

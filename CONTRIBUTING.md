@@ -26,7 +26,36 @@ This installs the Rust toolchain (with `clippy` and `rustfmt`) and [`uv`](https:
 
 On Windows, building requires the Visual Studio C++ build tools (MSVC and the Windows SDK). Run cargo from PowerShell or cmd rather than Git Bash, whose `link` command shadows the MSVC linker.
 
-## Structure
+## Live Tests
+`mise run test` only runs offline tests. The live tests in `tests/live.rs` call the real Open Cloud API, which catches things offline tests can't: wrong URLs, missing permissions, and response fields Roblox has changed.
+
+1. Create a **dedicated test experience** and publish it once, so it has a place with a `Workspace`.
+2. On the [Creator Dashboard](https://create.roblox.com/dashboard/credentials), create an API key restricted to that experience, with the permissions below.
+3. Copy `mise.local.toml.example` to `mise.local.toml` (gitignored) and fill in the key and IDs. Run `mise trust mise.local.toml` if mise asks.
+4. Run `mise run test:live`. Append a name to run a subset, e.g. `mise run test:live -- luau`.
+
+Each test skips itself (printing which variable to set) if an ID it needs is missing. Tests that modify data only run with `RBXCLOUD_TEST_WRITE = "1"`. They only touch keys named `rbxcloud-live-<run id>` and delete them afterwards. Nothing irreversible is tested: game passes and developer products can't be deleted, so only their read endpoints are covered.
+
+| Test | Needs | API key permissions |
+| -- | -- | -- |
+| `universe_and_place` | universe, place | none beyond the experience |
+| `user_and_asset_quotas` | user | `user.advanced:read`, `user.social:read`, `asset:read` |
+| `group_reads` | group | `group:read` |
+| `list_data_stores` | universe | `universe-datastores.control:list` |
+| `instance_tree` | universe, place | `universe.place.instance:read` |
+| `monetization_lists` | universe | `game-pass:read`, `developer-product:read` |
+| `list_secrets` | universe | `universe.secret:read` |
+| `creator_store_search` | none | `creator-store-product:read` |
+| `luau_execution`, `luau_binary_input` | universe, place | `universe.place.luau-execution-session:write` |
+| `data_store_roundtrip` (write) | universe | `universe-datastores.objects:*` (read, update, delete), `universe-datastores.versions:list` |
+| `ordered_data_store_roundtrip` (write) | universe | `universe.ordered-data-store.scope.entry:read`, `:write` |
+| `memory_store_queue` (write) | universe | `memory-store.queue:add`, `:dequeue`, `:discard` |
+| `memory_store_sorted_map` (write) | universe | `memory-store.sorted-map:read`, `:write` |
+| `publish_message` (write) | universe | `universe-messaging-service:publish` |
+| `secret_roundtrip` (write) | universe | `universe.secret:read`, `:write` |
+
+The `Live Tests` GitHub workflow runs the same suite weekly and on demand. It uses the repository secret `RBXCLOUD_API_KEY` and repository variables named like the `RBXCLOUD_TEST_*` settings above; with no key configured, it skips.
+
 The `rbxcloud` project is split into two main chunks:
 1. Rust library for accessing Roblox Open Cloud
 2. CLI tool for accessing the Roblox Open Cloud

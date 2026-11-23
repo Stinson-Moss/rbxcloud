@@ -33,6 +33,12 @@ pub enum Error {
 
     /// A Luau buffer value could not be decoded.
     BufferDecodeError(String),
+
+    /// A long-running operation failed or did not finish in time.
+    OperationError { code: i64, msg: String },
+
+    /// A secret could not be encrypted.
+    EncryptionError(String),
 }
 
 impl std::error::Error for Error {
@@ -84,6 +90,8 @@ impl std::fmt::Display for Error {
             Self::ParseFloatError(e) => write!(f, "{e}"),
             Self::EndpointError(s) => write!(f, "endpoint error: {s}"),
             Self::BufferDecodeError(s) => write!(f, "failed to decode buffer: {s}"),
+            Self::OperationError { code, msg } => write!(f, "operation failed ({code}): {msg}"),
+            Self::EncryptionError(s) => write!(f, "failed to encrypt secret: {s}"),
         }
     }
 }

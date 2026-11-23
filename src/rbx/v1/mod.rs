@@ -613,6 +613,52 @@ impl RbxAssets {
         .await
     }
 
+    /// List an asset's versions, newest first.
+    pub async fn list_versions(
+        &self,
+        asset_id: u64,
+        max_page_size: Option<u32>,
+        page_token: Option<String>,
+    ) -> Result<assets::ListAssetVersionsResponse, Error> {
+        assets::list_asset_versions(&self.http, asset_id, max_page_size, page_token).await
+    }
+
+    /// Get a specific version of an asset.
+    pub async fn get_version(
+        &self,
+        asset_id: u64,
+        version_number: u64,
+    ) -> Result<assets::AssetVersion, Error> {
+        assets::get_asset_version(&self.http, asset_id, version_number).await
+    }
+
+    /// Roll an asset back to a previous version.
+    pub async fn rollback(
+        &self,
+        asset_id: u64,
+        version_number: u64,
+    ) -> Result<assets::AssetVersion, Error> {
+        assets::rollback_asset_version(&self.http, asset_id, version_number).await
+    }
+
+    /// Grant a user, group, or universe permission to use or edit assets.
+    pub async fn grant_permissions(
+        &self,
+        subject: assets::PermissionSubject,
+        action: assets::AssetPermissionAction,
+        asset_ids: &[u64],
+        grant_to_dependencies: bool,
+    ) -> Result<assets::BatchGrantPermissionsResponse, Error> {
+        assets::grant_permissions(
+            &self.http,
+            subject,
+            action,
+            asset_ids,
+            grant_to_dependencies,
+        )
+        .await
+    }
+
     pub async fn restore(&self, params: &ArchiveAsset) -> Result<AssetInfo, Error> {
         assets::restore_asset(
             &self.http,

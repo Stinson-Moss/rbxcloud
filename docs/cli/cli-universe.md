@@ -47,7 +47,7 @@ Options:
 
 ### Example
 ```
-$ rbxcloud universe update-description -n "Experience description here." -p -u 12345 -a MY_KEY
+$ rbxcloud universe update-description -d "Experience description here." -p -u 12345 -a MY_KEY
 ```
 
 ## Restarting Servers

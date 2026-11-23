@@ -1,7 +1,7 @@
 use clap::{Args, Subcommand};
 use rbxcloud::rbx::{
     types::{PlaceId, UniverseId},
-    v2::luau_execution::LuauExecutionTaskLogView,
+    v2::luau_execution::{LuauExecutionOutcome, LuauExecutionTaskLogView},
 };
 use tokio::fs;
 
@@ -33,6 +33,20 @@ pub enum LuauExecutionCommands {
         #[clap(short, long, value_parser)]
         timeout: Option<String>,
 
+        /// File to pass to the script as `({...})[1].BinaryInput` (max 100 MiB)
+        #[clap(short, long, value_parser)]
+        binary_input: Option<String>,
+
+        /// Allow the script to return a `BinaryOutput` buffer (fetch it with
+        /// `get-task --save-binary-output`)
+        #[clap(long, value_parser, default_value_t = false)]
+        binary_output: bool,
+
+        /// Wait for the task to finish and print the final task (exits with an
+        /// error if the script fails)
+        #[clap(short = 'W', long, value_parser, default_value_t = false)]
+        wait: bool,
+
         /// Pretty-print the JSON response
         #[clap(short, long, value_parser, default_value_t = false)]
         pretty: bool,
@@ -63,6 +77,10 @@ pub enum LuauExecutionCommands {
         /// Luau execution task ID
         #[clap(short, long, value_parser)]
         task_id: String,
+
+        /// Download the task's binary output to this file
+        #[clap(long, value_parser)]
+        save_binary_output: Option<String>,
 
         /// Pretty-print the JSON response
         #[clap(short, long, value_parser, default_value_t = false)]
@@ -133,6 +151,9 @@ impl Luau {
                 script,
                 filepath,
                 timeout,
+                binary_input,
+                binary_output,
+                wait,
                 pretty,
                 api_key,
             } => {
@@ -154,7 +175,26 @@ impl Luau {
 
                 let src = script_source.expect("script or filepath must be set");
 
-                let res = luau.create_task(src, timeout).await;
+                let binary_input =
+                    match binary_input {
+                        Some(path) => Some(fs::read(&path).await.map_err(|e| {
+                            anyhow::anyhow!("failed to read binary input {path}: {e}")
+                        })?),
+                        None => None,
+                    };
+                let res = luau
+                    .create_task_with_binary(src, timeout, binary_input, binary_output)
+                    .await;
+                let res = match (res, wait) {
+                    (Ok(task), true) => {
+                        let task = luau.wait(task).await?;
+                        if let LuauExecutionOutcome::Failed(err) = task.outcome() {
+                            anyhow::bail!("Luau task failed: {err}");
+                        }
+                        Ok(task)
+                    }
+                    (res, _) => res,
+                };
                 match res {
                     Ok(data) => {
                         let r = if pretty {
@@ -174,6 +214,7 @@ impl Luau {
                 version_id,
                 session_id,
                 task_id,
+                save_binary_output,
                 pretty,
                 api_key,
             } => {
@@ -182,6 +223,13 @@ impl Luau {
                 let luau = client.luau(UniverseId(universe_id), PlaceId(place_id), version_id);
 
                 let res = luau.get_task(session_id, task_id).await;
+                if let (Ok(task), Some(path)) = (&res, &save_binary_output) {
+                    let bytes = luau.download_binary_output(task).await?;
+                    fs::write(path, &bytes)
+                        .await
+                        .map_err(|e| anyhow::anyhow!("failed to write {path}: {e}"))?;
+                    eprintln!("saved {} bytes of binary output to {path}", bytes.len());
+                }
                 match res {
                     Ok(data) => {
                         let r = if pretty {

@@ -1,0 +1,60 @@
+name: Live Tests
+
+# Runs tests/live.rs against a real test experience to catch Roblox API
+# changes. Configure in the repository settings:
+#   Secret:    RBXCLOUD_API_KEY
+#   Variables: RBXCLOUD_TEST_UNIVERSE_ID, RBXCLOUD_TEST_PLACE_ID,
+#              RBXCLOUD_TEST_GROUP_ID, RBXCLOUD_TEST_USER_ID,
+#              RBXCLOUD_TEST_WRITE ("1" to enable tests that modify data)
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: live-tests
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: Live Tests
+    runs-on: ubuntu-latest
+    env:
+      RBXCLOUD_API_KEY: ${{ secrets.RBXCLOUD_API_KEY }}
+      RBXCLOUD_TEST_UNIVERSE_ID: ${{ vars.RBXCLOUD_TEST_UNIVERSE_ID }}
+      RBXCLOUD_TEST_PLACE_ID: ${{ vars.RBXCLOUD_TEST_PLACE_ID }}
+      RBXCLOUD_TEST_GROUP_ID: ${{ vars.RBXCLOUD_TEST_GROUP_ID }}
+      RBXCLOUD_TEST_USER_ID: ${{ vars.RBXCLOUD_TEST_USER_ID }}
+      RBXCLOUD_TEST_WRITE: ${{ vars.RBXCLOUD_TEST_WRITE }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "$RBXCLOUD_API_KEY" ]; then
+            echo "::notice::RBXCLOUD_API_KEY secret is not set; skipping live tests."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.enabled == 'true'
+
+      - name: Rust
+        if: steps.config.outputs.enabled == 'true'
+        run: rustup toolchain install stable --profile minimal --no-self-update
+
+      - name: Rust Cache
+        if: steps.config.outputs.enabled == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - name: Live tests
+        if: steps.config.outputs.enabled == 'true'
+        # Empty repository variables arrive as empty strings; unset them so the
+        # tests treat them as missing rather than invalid.
+        run: |
+          for var in RBXCLOUD_TEST_UNIVERSE_ID RBXCLOUD_TEST_PLACE_ID RBXCLOUD_TEST_GROUP_ID RBXCLOUD_TEST_USER_ID RBXCLOUD_TEST_WRITE; do
+            if [ -z "${!var}" ]; then unset "$var"; fi
+          done
+          cargo test --test live -- --ignored --test-threads=4 --nocapture
