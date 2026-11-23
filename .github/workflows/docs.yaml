@@ -9,6 +9,9 @@ jobs:
   build:
     name: Build & Deploy Docs
     runs-on: ubuntu-latest
+    permissions:
+      # Required to push the built site to the gh-pages branch.
+      contents: write
     steps:
     - uses: actions/checkout@v4
     

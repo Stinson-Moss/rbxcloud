@@ -105,6 +105,9 @@ jobs:
     needs: ["build"]
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      # Required to create the GitHub release and upload binaries.
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
