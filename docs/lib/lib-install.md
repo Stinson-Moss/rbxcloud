@@ -5,12 +5,12 @@
 This fork is not published to crates.io, so add `rbxcloud` as a git dependency in `Cargo.toml`:
 ```toml
 [dependencies]
-rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.18.0" }
+rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.19.0" }
 ```
 
 Alternatively, use `cargo add`.
 ```sh
-$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.18.0
+$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.19.0
 ```
 
 ## Documentation

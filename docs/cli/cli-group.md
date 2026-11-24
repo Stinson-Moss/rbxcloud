@@ -13,11 +13,13 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -40,11 +42,13 @@ Options:
   -o, --only-message
           Only return the shout message string
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -69,11 +73,13 @@ Options:
   -n, --next-page-token <NEXT_PAGE_TOKEN>
           Next page token
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -94,13 +100,15 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -r, --role-id <ROLE_ID>
           Role ID
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -127,11 +135,13 @@ Options:
   -n, --next-page-token <NEXT_PAGE_TOKEN>
           Next page token
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -152,15 +162,17 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -U, --user-id <USER_ID>
           User ID of the member
   -r, --role-id <ROLE_ID>
           Role ID
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -181,15 +193,17 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -U, --user-id <USER_ID>
           User ID of the member
   -r, --role-id <ROLE_ID>
           Role ID
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -210,7 +224,7 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -m, --max-page-size <MAX_PAGE_SIZE>
           Max items returned per page
   -n, --next-page-token <NEXT_PAGE_TOKEN>
@@ -218,9 +232,11 @@ Options:
   -f, --filter <FILTER>
           Filter, e.g. "user == 'users/123'"
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -241,13 +257,15 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -j, --join-request-id <JOIN_REQUEST_ID>
           Join request ID (the last segment of its `path`)
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -268,13 +286,15 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -j, --join-request-id <JOIN_REQUEST_ID>
           Join request ID (the last segment of its `path`)
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -295,15 +315,17 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -m, --max-page-size <MAX_PAGE_SIZE>
           Max items returned per page
   -n, --next-page-token <NEXT_PAGE_TOKEN>
           Next page token
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -324,7 +346,7 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -m, --max-page-size <MAX_PAGE_SIZE>
           Max items returned per page
   -n, --next-page-token <NEXT_PAGE_TOKEN>
@@ -332,9 +354,11 @@ Options:
   -c, --category-id <CATEGORY_ID>
           Forum category ID
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```
@@ -355,7 +379,7 @@ Options:
   -p, --pretty
           Pretty-print the JSON response
   -a, --api-key <API_KEY>
-          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -m, --max-page-size <MAX_PAGE_SIZE>
           Max items returned per page
   -n, --next-page-token <NEXT_PAGE_TOKEN>
@@ -365,9 +389,11 @@ Options:
   -i, --post-id <POST_ID>
           Forum post ID
       --request-timeout <REQUEST_TIMEOUT>
-          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
+          Maximum seconds to wait for each request to Roblox (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
       --proxy <PROXY>
-          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY=]
+          Proxy URL for all requests (e.g. http://host:port or socks5://host:port). Defaults to the HTTPS_PROXY / HTTP_PROXY / ALL_PROXY environment variables [env: RBXCLOUD_PROXY]
+      --show-env-values
+          Show environment variable values (e.g. API keys) in help output. Hidden by default to avoid leaking secrets [env: RBXCLOUD_SHOW_ENV_VALUES]
   -h, --help
           Print help
 ```

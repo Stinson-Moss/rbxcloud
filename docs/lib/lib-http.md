@@ -41,8 +41,8 @@ An existing `reqwest::Client` can also be wrapped with `HttpClient::from_reqwest
 The CLI exposes the same settings as global flags, available on every command:
 
 ```
---request-timeout <SECONDS>   Maximum seconds to wait for each request (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT=] [default: 120]
---proxy <PROXY>               Proxy URL for all requests [env: RBXCLOUD_PROXY=]
+--request-timeout <SECONDS>   Maximum seconds to wait for each request (0 = no limit) [env: RBXCLOUD_REQUEST_TIMEOUT] [default: 120]
+--proxy <PROXY>               Proxy URL for all requests [env: RBXCLOUD_PROXY]
 ```
 
 ## Errors

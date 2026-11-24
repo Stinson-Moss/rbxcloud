@@ -50,13 +50,13 @@ The goal of this project is to support all API endpoints that Roblox provides.
 ## Install CLI
 ### mise-en-place
 ```sh
-$ mise use github:Stinson-Moss/rbxcloud@0.18.0
+$ mise use github:Stinson-Moss/rbxcloud@0.19.0
 ```
 
 ### Aftman
 Run the `aftman add` command within your project directory. This will add `rbxcloud` to the project's `aftman.toml` file (or create one if it doesn't yet exist).
 ```sh
-$ aftman add Stinson-Moss/rbxcloud@0.18.0
+$ aftman add Stinson-Moss/rbxcloud@0.19.0
 ```
 
 ### From Release
@@ -73,12 +73,12 @@ The library built for the CLI tool is available to use directly in Rust projects
 This fork is not published to crates.io, so add it as a git dependency in `Cargo.toml`:
 ```toml
 [dependencies]
-rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.18.0" }
+rbxcloud = { git = "https://github.com/Stinson-Moss/rbxcloud", tag = "v0.19.0" }
 ```
 
 Alternatively, use `cargo add`.
 ```sh
-$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.18.0
+$ cargo add rbxcloud --git https://github.com/Stinson-Moss/rbxcloud --tag v0.19.0
 ```
 
 Run `cargo doc --open` in this repository (or `mise run docs:rust`) for library documentation.

@@ -10,7 +10,7 @@ Options:
   -U, --user-id <USER_ID>          User ID
   -P, --payload <PAYLOAD>          Payload
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 

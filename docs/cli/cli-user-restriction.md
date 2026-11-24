@@ -10,7 +10,7 @@ Options:
   -U, --user-id <USER_ID>          User ID
   -P, --place-id <PLACE_ID>        Place ID
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -29,7 +29,7 @@ Options:
   -D, --display-reason <DISPLAY_REASON>  Display reason
   -e, --exclude-alts <EXCLUDE_ALTS>      Exclude alternate accounts [possible values: true, false]
   -p, --pretty                           Pretty-print the JSON response
-  -a, --api-key <API_KEY>                Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>                Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                             Print help
 ```
 
@@ -45,7 +45,7 @@ Options:
   -t, --token <TOKEN>              Next page token
   -f, --filter <FILTER>            Filter
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -61,6 +61,6 @@ Options:
   -t, --token <TOKEN>              Next page token
   -f, --filter <FILTER>            Filter
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```

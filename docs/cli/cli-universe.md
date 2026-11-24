@@ -7,7 +7,7 @@ Usage: rbxcloud universe get [OPTIONS] --universe-id <UNIVERSE_ID> --api-key <AP
 Options:
   -u, --universe-id <UNIVERSE_ID>  Universe ID
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -24,7 +24,7 @@ Options:
   -u, --universe-id <UNIVERSE_ID>  Universe ID
   -n, --name <NAME>                New Universe name
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -41,7 +41,7 @@ Options:
   -u, --universe-id <UNIVERSE_ID>  Universe ID
   -d, --description <DESCRIPTION>  New Universe description
   -p, --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -56,7 +56,7 @@ Usage: rbxcloud universe restart --universe-id <UNIVERSE_ID> --api-key <API_KEY>
 
 Options:
   -u, --universe-id <UNIVERSE_ID>  Universe ID
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 

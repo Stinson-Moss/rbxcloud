@@ -7,7 +7,7 @@ There are a few different ways to install the `rbxcloud` CLI.
 ### [mise-en-place](https://mise.jdx.dev) <small>(Preferred)</small>
 Run `mise use` within your project directory. This adds `rbxcloud` to the project's `mise.toml` file (creating it if needed) and installs it from the GitHub releases.
 ```sh
-$ mise use github:Stinson-Moss/rbxcloud@0.18.0
+$ mise use github:Stinson-Moss/rbxcloud@0.19.0
 ```
 
 Omit the version (`github:Stinson-Moss/rbxcloud`) to use the latest release. Anyone else working in the project then only needs to run `mise install`.
@@ -15,7 +15,7 @@ Omit the version (`github:Stinson-Moss/rbxcloud`) to use the latest release. Any
 ### [Aftman](https://github.com/LPGhatguy/aftman)
 Run the `aftman add` command within your project directory. This will add `rbxcloud` to the project's `aftman.toml` file (or create one if it doesn't yet exist).
 ```sh
-$ aftman add Stinson-Moss/rbxcloud@0.18.0
+$ aftman add Stinson-Moss/rbxcloud@0.19.0
 ```
 
 Next, run `aftman install` to install `rbxcloud`.
@@ -25,7 +25,7 @@ Add `rbxcloud` under the `[tools]` section of your `foreman.toml` file.
 ```toml
 # foreman.toml
 [tools]
-rbxcloud = { github = "Stinson-Moss/rbxcloud", version = "0.18.0" }
+rbxcloud = { github = "Stinson-Moss/rbxcloud", version = "0.19.0" }
 ```
 
 Next, run `foreman install` to install `rbxcloud`.

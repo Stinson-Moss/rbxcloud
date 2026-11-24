@@ -1,4 +1,4 @@
-# API Key
+﻿# API Key
 `rbxcloud` requires a Roblox API key to function. These keys can be created and managed on the [Credentials](https://create.roblox.com/credentials) Roblox page. Remember to always keep these keys secret.
 
 Roblox API keys will auto-expire if not used for over 60 days. Use the Credentials page to regenerate the key if this occurs.
@@ -22,3 +22,19 @@ If a key must be located within a local repository's directory, be sure to add i
 
 ## Environment Variable
 All CLI commands expect the `--api-key` parameter, but can also be set via the `RBXCLOUD_API_KEY` environment variable. With the environment variable set, the `--api-key` parameter can be left out.
+
+To keep the key out of screenshots and CI logs, `--help` lists which environment variables each option reads but not their values:
+
+```sh
+$ rbxcloud datastore list-stores --help
+  -a, --api-key <API_KEY>
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
+```
+
+To check what is currently set, pass the global `--show-env-values` flag to any command, or set `RBXCLOUD_SHOW_ENV_VALUES=true`:
+
+```sh
+$ rbxcloud datastore list-stores --show-env-values --help
+  -a, --api-key <API_KEY>
+          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=<your key>]
+```

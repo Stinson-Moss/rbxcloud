@@ -8,7 +8,7 @@ Options:
   -u, --universe-id <UNIVERSE_ID>  Universe ID
   -p, --place-id <PLACE_ID>        Place ID
       --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -26,7 +26,7 @@ Options:
   -p, --place-id <PLACE_ID>        Place ID
   -n, --name <NAME>                New Place name
       --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -44,7 +44,7 @@ Options:
   -p, --place-id <PLACE_ID>        Place ID
   -d, --description <DESCRIPTION>  New Place description
       --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 
@@ -62,7 +62,7 @@ Options:
   -p, --place-id <PLACE_ID>        Place ID
   -s, --server-size <SERVER_SIZE>  New Place server size
       --pretty                     Pretty-print the JSON response
-  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>          Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help                       Print help
 ```
 

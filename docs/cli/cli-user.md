@@ -7,7 +7,7 @@ Usage: rbxcloud user get [OPTIONS] --user-id <USER_ID> --api-key <API_KEY>
 Options:
   -u, --user-id <USER_ID>  User ID
   -p, --pretty             Pretty-print the JSON response
-  -a, --api-key <API_KEY>  Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>  Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help               Print help
 ```
 
@@ -26,7 +26,7 @@ Options:
   -f, --format <FORMAT>    Thumbnail format [possible values: png, jpeg]
   -S, --shape <SHAPE>      Thumbnail shape [possible values: round, square]
   -p, --pretty             Pretty-print the JSON response
-  -a, --api-key <API_KEY>  Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY=]
+  -a, --api-key <API_KEY>  Roblox Open Cloud API Key [env: RBXCLOUD_API_KEY]
   -h, --help               Print help
 ```
 

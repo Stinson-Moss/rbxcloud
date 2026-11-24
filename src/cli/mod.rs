@@ -68,8 +68,52 @@ pub(crate) struct Cli {
     )]
     pub proxy: Option<String>,
 
+    /// Show environment variable values (e.g. API keys) in help output.
+    /// Hidden by default to avoid leaking secrets.
+    #[clap(
+        long,
+        global = true,
+        display_order = 902,
+        action = clap::ArgAction::SetTrue,
+        value_parser = clap::builder::FalseyValueParser::new(),
+        env = "RBXCLOUD_SHOW_ENV_VALUES"
+    )]
+    #[allow(dead_code)] // read by `show_env_values_requested` before parsing
+    pub show_env_values: bool,
+
     #[clap(subcommand)]
     pub command: Command,
+}
+
+/// Whether `--show-env-values` (or a truthy `RBXCLOUD_SHOW_ENV_VALUES`) was given.
+///
+/// Help is rendered while clap parses, so this has to be decided by scanning the
+/// raw arguments before the command is built.
+pub(crate) fn show_env_values_requested() -> bool {
+    let flag = std::env::args_os()
+        .skip(1)
+        .take_while(|a| a != "--")
+        .any(|a| a == "--show-env-values");
+    let env = std::env::var("RBXCLOUD_SHOW_ENV_VALUES").is_ok_and(|v| {
+        !matches!(
+            v.trim().to_ascii_lowercase().as_str(),
+            "" | "0" | "n" | "no" | "f" | "false" | "off"
+        )
+    });
+    flag || env
+}
+
+/// Recursively mark every argument of `cmd` and its subcommands to hide env values.
+pub(crate) fn hide_all_env_values(cmd: clap::Command) -> clap::Command {
+    let names: Vec<String> = cmd
+        .get_subcommands()
+        .map(|s| s.get_name().to_owned())
+        .collect();
+    let mut cmd = cmd.mut_args(|a| a.hide_env_values(true));
+    for name in names {
+        cmd = cmd.mut_subcommand(name, hide_all_env_values);
+    }
+    cmd
 }
 
 #[derive(Debug, Clone)]
